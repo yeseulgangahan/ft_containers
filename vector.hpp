@@ -2,7 +2,6 @@
 	// std::allocator
 	// std::uninitialized_fill_n(): Constructs the objects in-place, instead of just copying the value to them.
 	// std::uninitialized_copy(): Constructs the objects in-place, instead of just copying them.
-  // std::destroy(): Destroys the objects in the range.
 
 #include <iterator>
   // std::distance(): Returns the number of hops from first to last.
@@ -14,16 +13,16 @@ namespace ft
 // its constructor and destructor allocate (but don't initialize) storage.
 // This makes exception safety easier.
 
-template <class _Type, class _Allocator>
+template <class _Type, class _AllocatorType>
 class _Vector_base {
 public:
-  typedef typename _Alloc_traits<_Type, _Allocator>::allocator_type allocator_type; // ft::allocator<_Type> is default.
+  typedef _AllocatorType allocator_type; // std::allocator<_Type> is default.
 
 	// returns the associated allocator
 	allocator_type get_allocator() const { return _M_data_allocator; }
 
 protected:
-  allocator_type _M_data_allocator; //instantiation
+  allocator_type _M_data_allocator; //instantiation. It is used to acquire/release memory, construct/destroy the elements in that memory.
   _Type* _M_start;
   _Type* _M_finish; // Next to the last data
   _Type* _M_end_of_storage; // Next to the last storable space
@@ -32,36 +31,33 @@ protected:
 		_M_allocate(size_t __n) { return _M_data_allocator.allocate(__n); }
   void _M_deallocate(_Type* __p, size_t __n) { if (__p) _M_data_allocator.deallocate(__p, __n); }
 
-	private:
-	// constructor1
+public:
+	// CONSTRUCTOR1
   _Vector_base(const allocator_type& __a)
 		: _M_data_allocator(__a), _M_start(0), _M_finish(0), _M_end_of_storage(0) {}
 
-	// constructor2
+	// CONSTRUCTOR2
   _Vector_base(size_t __n, const allocator_type& __a)
-		: _M_data_allocator(__a)/*, _M_start(_M_allocate(__n))*/, _M_finish(_M_start), _M_end_of_storage(_M_start + __n)
-	{
-    _M_start = _M_allocate(__n); //질문: 위에처럼 해도 될까?
-	}
+		: _M_data_allocator(__a), _M_start(_M_allocate(__n)), _M_finish(_M_start), _M_end_of_storage(_M_start + __n) {}
 
-	// destructor
+	// DESTRUCTOR
   ~_Vector_base() { _M_deallocate(_M_start, _M_end_of_storage - _M_start); }
 };
 
 template <
 	class _Type, // The type of the elements.
-	class _Allocator = std::allocator<_Type> // is used to acquire/release memory, construct/destroy the elements in that memory.
-> class vector : protected _Vector_base<_Type, _Allocator>
+	class _AllocatorType = std::allocator<_Type> // Type of the allocator object.
+> class vector : protected _Vector_base<_Type, _AllocatorType>
 {
 private:
-  typedef _Vector_base<_Type, _Allocator> _Base;
-  typedef vector<_Type, _Allocator> vector_type;
+  typedef _Vector_base<_Type, _AllocatorType> _Base;
+  typedef vector<_Type, _AllocatorType> vector_type;
 
 public:
 	// Member types
 
   typedef _Type value_type; // The first template parameter
-  typedef typename _Allocator allocator_type; // The second template parameter
+  typedef _AllocatorType allocator_type; // The second template parameter
 
   typedef std::size_t size_type; // Unsigned integer type. this can represent any non-negative value of difference_type.
   typedef std::ptrdiff_t difference_type; // Signed integer type. identical to: iterator_traits<iterator>::difference_type.
@@ -69,14 +65,14 @@ public:
 	typedef value_type& reference;
   typedef const value_type& const_reference;
 
-  typedef allocator_type::pointer pointer;
-  typedef const allocator_type::const_pointer const_pointer;
+  typedef typename allocator_type::pointer pointer;
+  typedef const typename allocator_type::const_pointer const_pointer;
 
-	typedef _normal_iterator<pointer, vector_type> iterator; // a random access iterator to value_type. convertable to const_iterator.
-  typedef _normal_iterator<const_pointer, vector_type> const_iterator; //a random access iterator to const value_type
+	// typedef _normal_iterator<pointer, vector_type> iterator; // a random access iterator to value_type. convertable to const_iterator.
+  // typedef _normal_iterator<const_pointer, vector_type> const_iterator; //a random access iterator to const value_type
 
-  typedef reverse_iterator<iterator> reverse_iterator;
-  typedef reverse_iterator<const_iterator> const_reverse_iterator;
+  // typedef std::reverse_iterator<iterator> reverse_iterator;
+  // typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
 protected:
   using _Base::_M_allocate;
@@ -214,12 +210,12 @@ protected:
 //     if (__position + 1 != end())
 //       copy(__position + 1, end(), __position);
 //     --_M_finish;
-//     std::destory(_M_finish);
+//     destory(_M_finish);
 //     return __position;
 //   }
 //   iterator erase(iterator __first, iterator __last) {
 //     iterator __i(copy(__last, end(), __first));
-//     std::destory(__i, end());
+//     destory(__i, end());
 //     _M_finish = _M_finish - (__last - __first);
 //     return __first;
 //   }
@@ -246,7 +242,7 @@ protected:
 // 	// removes the last element
 //   void pop_back() {
 //     --_M_finish;
-//     std::destory(_M_finish);
+//     destory(_M_finish);
 //   }
 
 // 	// changes the number of elements stored
@@ -268,44 +264,46 @@ protected:
 //   }
 
 public:
-	// constructor
+	// CONSTRUCTOR
+  // [Exception safety: Strong guarantee]
 	// : Constructs a vector, initializing its contents depending on the constructor version used.
 
 	// constructor1. empty container constructor (default constructor)
   explicit vector(
-		const allocator_type& __a = allocator_type() // Default is to create a temporary object and copy it using the copy constructor.
+		const allocator_type& __a = allocator_type() // Allocator object. The container keeps and uses an internal copy of this allocator.
 	) : _Base(__a) {}
 
 	// constructor2. fill constructor
 	// : Constructs a container with n elements. Each element is a copy of __value.
   explicit vector(
-			size_type __n,
-			const _Type& __value,
-			const allocator_type& __a = allocator_type())
-    : _Base(__n, __a)
+    size_type __n, // Initial container size
+    const _Type& __value, // Value to fill the container with.
+    const allocator_type& __a = allocator_type()
+  ) : _Base(__n, __a)
     { _M_finish = std::uninitialized_fill_n(_M_start, __n, __value); }
 
 	// constructor3. range constructor
+  // (if the range specified by [__first, __last) is not valid, it causes undefined behavior.)
   template <class _InputIterator>
     vector(
-      std::enable_if<!std::is_integral<_InputIterator>::value,// Check whether it's an integral type.  If so, it's not an iterator (and choose constructor2 by SFINE).
+      typename std::enable_if<!std::is_integral<_InputIterator>::value,// Check whether it's an integral type.  If so, it's not an iterator (then it choosees constructor2 by SFINE).
       _InputIterator>::type  __first,
       _InputIterator __last,
-      const allocator_type& __a = allocator_type())
-	: _Base(__a)
-  {
-	  typedef typename iterator_traits<_InputIterator>::iterator_category _IterCategory;
-	  _M_range_initialize(__first, __last, _IterCategory());
+      const allocator_type& __a = allocator_type()
+    ) : _Base(__a) {
+	  typedef typename std::iterator_traits<_InputIterator>::iterator_category __IteratorCategory;
+	  _M_range_initialize(__first, __last, __IteratorCategory());
   }
 
 	// constructor4. copy constructor
-  vector(const vector<_Type, _Alloc>& __x)
-    : _Base(__x.size(), __x.get_allocator())
+  vector(
+    const vector& __x // Another vector object of the same type (with the same class template arguments T and Alloc),
+  ) : _Base(__x.size(), __x.get_allocator())
     { _M_finish = std::uninitialized_copy(__x.begin(), __x.end(), _M_start); }
 
-	// destructor
+	// DESTRUCTOR
   ~vector()
-  { std::destory(_M_start, _M_finish); }
+  { /*std::destory(_M_start, _M_finish);*/ } //질문:: 11이므로 직접 구현해야 한다.
 
 	// // assigns values to the container
   // vector<_Type, _Alloc>& operator=(const vector<_Type, _Alloc>& __x);
@@ -349,25 +347,26 @@ public:
   // void _M_assign_aux(_ForwardIterator __first, _ForwardIterator __last,
   //                    forward_iterator_tag);
 
-	// // returns the associated allocator
-  // allocator_type get_allocator() const { return _Base::get_allocator(); }
+	// returns the associated allocator
+  allocator_type get_allocator() const { return _Base::get_allocator(); }
 
 //----------------------------------------------------------------------------------------
 
 protected:
-  // _M_functions
+  // _M_FUNCTIONS
 
-	// 1. this function only called by the constructor3.
-  // 1-1.
+	// INITIALIZE
+  // : this function only called by the constructor3.
+
   template <class _InputIterator>
-  void _M_range_initialize(_InputIterator __first, _InputIterator __last, input_iterator_tag) {
+  void _M_range_initialize(_InputIterator __first, _InputIterator __last, std::input_iterator_tag) {
     for ( ; __first != __last; ++__first) // reallocations while growing.
       push_back(*__first);
   }
 
-  // 1-2. The forward_iterator_tag struct and its derived structs
+  // The forward_iterator_tag struct and its derived structs
   template <class _ForwardIterator>
-  void _M_range_initialize(_ForwardIterator __first, _ForwardIterator __last, forward_iterator_tag) {
+  void _M_range_initialize(_ForwardIterator __first, _ForwardIterator __last, std::forward_iterator_tag) {
     size_type __n = std::distance(__first, __last);
     _M_start = _M_allocate(__n);
     _M_end_of_storage = _M_start + __n;
@@ -462,14 +461,14 @@ protected:
 //     const size_type __xlen = __x.size();
 //     if (__xlen > capacity()) {
 //       pointer __tmp = _M_allocate_and_copy(__xlen, __x.begin(), __x.end());
-//       std::destory(_M_start, _M_finish);
+//       destory(_M_start, _M_finish);
 //       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
 //       _M_start = __tmp;
 //       _M_end_of_storage = _M_start + __xlen;
 //     }
 //     else if (size() >= __xlen) {
 //       iterator __i(copy(__x.begin(), __x.end(), begin()));
-//       std::destory(__i, end());
+//       destory(__i, end());
 //     }
 //     else {
 //       copy(__x.begin(), __x.begin() + size(), _M_start);
@@ -516,14 +515,14 @@ protected:
 
 //   if (__len > capacity()) {
 //     pointer __tmp(_M_allocate_and_copy(__len, __first, __last));
-//     std::destory(_M_start, _M_finish);
+//     destory(_M_start, _M_finish);
 //     _M_deallocate(_M_start, _M_end_of_storage - _M_start);
 //     _M_start = __tmp;
 //     _M_end_of_storage = _M_finish = _M_start + __len;
 //   }
 //   else if (size() >= __len) {
 //     iterator __new_finish(copy(__first, __last, _M_start));
-//     std::destory(__new_finish, end());
+//     destory(__new_finish, end());
 //     _M_finish = __new_finish.base();
 //   }
 //   else {
@@ -560,11 +559,11 @@ protected:
 //     }
 //     catch(...)
 //       {
-// 	std::destory(__new_start,__new_finish);
+// 	destory(__new_start,__new_finish);
 // 	_M_deallocate(__new_start.base(),__len);
 // 	__throw_exception_again;
 //       }
-//     std::destory(begin(), end());
+//     destory(begin(), end());
 //     _M_deallocate(_M_start, _M_end_of_storage - _M_start);
 //     _M_start = __new_start.base();
 //     _M_finish = __new_finish.base();
@@ -598,11 +597,11 @@ protected:
 //     }
 //     catch(...)
 //       {
-// 	std::destory(__new_start,__new_finish);
+// 	destory(__new_start,__new_finish);
 // 	_M_deallocate(__new_start,__len);
 // 	__throw_exception_again;
 //       }
-//     std::destory(begin(), end());
+//     destory(begin(), end());
 //     _M_deallocate(_M_start, _M_end_of_storage - _M_start);
 //     _M_start = __new_start;
 //     _M_finish = __new_finish;
@@ -646,11 +645,11 @@ protected:
 //       }
 //       catch(...)
 // 	{
-// 	  std::destory(__new_start,__new_finish);
+// 	  destory(__new_start,__new_finish);
 // 	  _M_deallocate(__new_start.base(),__len);
 // 	  __throw_exception_again;
 // 	}
-//       std::destory(_M_start, _M_finish);
+//       destory(_M_start, _M_finish);
 //       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
 //       _M_start = __new_start.base();
 //       _M_finish = __new_finish.base();
@@ -715,17 +714,17 @@ protected:
 //       }
 //       catch(...)
 // 	{
-// 	  std::destory(__new_start,__new_finish);
+// 	  destory(__new_start,__new_finish);
 // 	  _M_deallocate(__new_start.base(), __len);
 // 	  __throw_exception_again;
 // 	}
-//       std::destory(_M_start, _M_finish);
+//       destory(_M_start, _M_finish);
 //       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
 //       _M_start = __new_start.base();
 //       _M_finish = __new_finish.base();
 //       _M_end_of_storage = __new_start.base() + __len;
 //     }
 //   }
-// }
+};
 
-} // namespace fd
+} // namespace ft
