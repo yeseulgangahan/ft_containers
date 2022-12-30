@@ -15,6 +15,7 @@ namespace ft
   struct random_access_iterator_tag : public bidirectional_iterator_tag {};
 
   // base of all iterator
+  // : implement an iterator by inheriting from this.
 
   template<typename _Category, typename _Type, typename _Distance = std::ptrdiff_t, typename _Pointer = _Type*, typename _Reference = _Type&>
     struct iterator {
@@ -26,9 +27,9 @@ namespace ft
     };
 
   // iterator traits
-  // Traits class defining properties of iterators.
-  // Standard algorithms determine (1) certain *properties* of the iterators passed to them and (2) the *range* they represent
-  // by using the members of the corresponding iterator_traits instantiation.
+  // :  Traits class defining properties of iterators.
+  //    Standard algorithms determine (1) certain *properties* of the iterators passed to them and (2) the *range* they represent
+  //    by using the members of the corresponding iterator_traits instantiation.
 
   // generic definition
   template<typename _Iterator>
