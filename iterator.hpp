@@ -42,7 +42,7 @@ namespace ft
       // copy assign: default
       // destructor: default
 
-      // return itself
+      // 객체 내부에서 실제 쓰이고 있는 (int* 등의) 포인터를 const reference로 반환한다.
       const _Iterator& base() const { return _M_current; }
 
     public:
