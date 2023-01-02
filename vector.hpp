@@ -16,6 +16,8 @@
 #include <iterator>
   // std::distance(): first부터 last까지 몇 칸인지 반환한다.
 
+  // std::advance(반복자, n): 반복자를 n만큼 이동한다.
+
 #include <limits>
   // std::numeric_limits
 
@@ -23,13 +25,29 @@
   // std::copy_backward(source의 시작지점, source의 끝지점, dest범위의 끝지점):
   //   source를 마지막인자를 끝지점으로 하는 범위에 끝에서부터 복사한다.
 
+  // std::max(a, b): a와 b 중 큰 것을 반환한다.
+
+  // std::copy(source의 시작, source의 끝, dest의 시작): 
+  //    source의 구간을 dest의 시작지점부터 복사한다.
+  //    범위의 길이가 0일 경우 3번째 인자를, 아니면 복사된 구간의 마지막을 반환한다.
+
+  // std::fill(시작, 끝, value):
+  //    시작부터 끝까지의 구간에, value를 대입한다.
+
+  // std::fill_n(시작, n, value):
+  //    시작부분부터 n개의 요소에 value를 대입한다. (단, C++98은 반환값이 없다.)
+
+#include <cstdlib>
+  // std::abs(n):
+  //  n의 절대값 absolute value을 반환한다.
+
 #include "iterator.hpp"
   // ft::__normal_iterator
 
 namespace ft
 {
 
-template <typename _Type, typename _AllocatorTypeType>atorType
+template <typename _Type, typename _AllocatorType>
 class _Vector_base {
 
 // vector base의 목적은,
@@ -48,9 +66,12 @@ protected:
   _Type* _M_finish; // 마지막 data의 다음
   _Type* _M_end_of_storage; // 마지막 저장가능한 공간의 다음
 
-  _Type* // 할당된 공간의 첫번째 요소에 대한 포인터
-    _M_allocate(size_t __n) { return _M_data_allocator.allocate(__n); }
-  void _M_deallocate(_Type* __p, size_t __n) { if (__p) _M_data_allocator.deallocate(__p, __n); }
+  // 할당된 공간의 첫번째 요소에 대한 포인터를 반환한다.
+  _Type* _M_allocate(size_t __n) 
+  { return _M_data_allocator.allocate(__n); }
+
+  void _M_deallocate(_Type* __p, size_t __n) 
+  { if (__p) _M_data_allocator.deallocate(__p, __n); }
 
 public:
   // CONSTRUCTOR
@@ -62,12 +83,14 @@ public:
 
   // DESTRUCTOR
   ~_Vector_base() { _M_deallocate(_M_start, _M_end_of_storage - _M_start); }
-};
+}; // class vector_base
+
+
 
 template <
   typename _Type, // 요소의 타입
-  typename _AllocatorTypeType = std::allocator<_Type> // 할당기 객체의 타입
-> class vector : protected _Vector_base<_TatorTypeype, _AllocatorType>
+  typename _AllocatorType = std::allocator<_Type> // 할당기 객체의 타입
+> class vector : protected _Vector_base<_Type, _AllocatorType>
 {
 
 // (멤버함수의 순서는 cppreference.com의 순서를 따라 정렬했습니다.)
@@ -212,6 +235,15 @@ public:
   void clear() { erase(begin(), end()); }
 
   // insert() :
+  // 지정된 위치의 요소 앞에 새 요소를 삽입한다. 
+  // 새 벡터의 크기가 현재 벡터 용량을 초과하는 경우에만 재할당된다. 
+  // 삽입된 지점 이전까지를 가리키는 반복자만 유효성을 유지한다. 재할당이 발생하면 기존의 반복자는 모두 무효화된다.
+  // 배열을 기본저장소로 사용하므로, 끝이 아닌 중간에 삽입하면 나머지 요소들이 모두 재배치된다.
+
+  // strong guarantee: (1)맨 끝에 할당 없이 단일 요소 삽입일 때, (2)할당하되 요소가 copyable일 때
+  //                   (copyable이란: 복사생성과 복사할당을 지원한다.)
+  // basic guarantee: 나머지 경우
+  // 인수가 잘못 들어왔을 경우, undefined behavior다.
 
   // insert1. 단일 요소 :
   // 새로 insert된 요소를 가리키는 반복자를 반환한다.
@@ -231,39 +263,43 @@ public:
     { _M_fill_insert(__pos, __n, __x); }
 
   // insert3. 범위 :
-  // Check whether it's an integral type.  If so, it's not an iterator.
+  // insert2에서 자료형이 딱 맞지 않으면 템플릿으로 와버린다. 반복자가 아닐 경우 다시 insert2로 보내주어야 한다.
   template<typename _InputIterator>
-    void insert(iterator __pos, _InputIterator __first, _InputIterator __last) {
-      typedef typename _Is_integer<_InputIterator>::_Integral _Integral;
-      _M_insert_dispatch(__pos, __first, __last, _Integral());
-    }
-
-  template <typename _Integer>
-    void _M_insert_dispatch(iterator __pos, _Integer __n, _Integer __val, __true_type)
-    { _M_fill_insert(__pos, static_cast<size_type>(__n), static_cast<_Type>(__val)); }
-
-  template<typename _InputIterator>
-    void _M_insert_dispatch(iterator __pos, _InputIterator __first, _InputIterator __last, __false_type) {
+  void insert(
+    iterator __pos, 
+    typename std::enable_if<!std::is_integral<_InputIterator>::value,
+    _InputIterator>::type __first,
+    _InputIterator __last) {
     typedef typename iterator_traits<_InputIterator>::iterator_category _IterCategory;
-      _M_range_insert(__pos, __first, __last, _IterCategory());
-    }
-
-  // erase() :
-
-  // erase1.
-  iterator erase(iterator __position) {
-    if (__position + 1 != end())
-      copy(__position + 1, end(), __position);
-    --_M_finish;
-    _M_destroy(_M_finish);
-    return __position;
+    _M_range_insert(__pos, __first, __last, _IterCategory());
   }
 
-  // erase2.
+  // erase() :
+  // 벡터에서 요소를 제거한다. 벡터의 size가 줄어든다.
+  // 벡터는 배열을 기본저장소로 사용하기 때문에, 중간에서 지우면 모든 요소가 재배치되어야 한다.
+  // 반환값: 지워진 요소 중 마지막 요소의 다음 요소의 새로운 위치를 가리키는 반복자
+
+  // exception safety
+  // no throw guarantee: 맨 뒤쪽을 지웠을 때
+  // basic guarantee: 나머지 경우
+  // 유효하지 않은 인자가 들어왔을 때는 undifined behavior다.
+
+  // erase1. 단일 요소
+  iterator erase(iterator __position) {
+    // 예) [1A234], erase A
+    if (__position + 1 != end()) // 끝 요소가 아니면
+      std::copy(__position + 1, end(), __position); // 앞으로 한 칸 당긴다 [12344]
+    --_M_finish; // [1234]
+    _M_destroy(_M_finish);
+    return __position; // __position: 2를 가리키는 반복자
+  }
+
+  // erase2. 범위
   iterator erase(iterator __first, iterator __last) {
-    iterator __i(copy(__last, end(), __first));
-    _M_destroy(__i, end());
-    _M_finish = _M_finish - (__last - __first);
+    // 예) [1AB23], erase AB
+    iterator __i(std::copy(__last, end(), __first)); // [12323]: 지울 범위의 뒷부분 데이터를 앞으로 옮긴다.
+    _M_destroy(__i, end()); // [12300]: 복사된 구간 다음부터 destroy
+    _M_finish = _M_finish - (__last - __first); // [123]: 지운 구간(__last - __first)만큼 줄인다.
     return __first;
   }
 
@@ -273,21 +309,21 @@ public:
 
   // push_back1. 특정 객체의 복사본 삽입
   void push_back(const _Type& __x) {
-    if (_M_finish != _M_end_of_storage) { // case1. 빈 공간이 있는 경우
+    if (_M_finish != _M_end_of_storage) { // case1: 빈 공간이 있는 경우
       _M_data_allocator.construct(_M_finish, __x);
       ++_M_finish;
     }
-    else // case2. 재할당이 필요한 경우
+    else // case2: 재할당이 필요한 경우
       _M_insert_aux(end(), __x);
   }
 
 // push_back2. 빈 객체 삽입
   void push_back() {
-    if (_M_finish != _M_end_of_storage) { // case1. 빈 공간이 있는 경우
+    if (_M_finish != _M_end_of_storage) { // case1: 빈 공간이 있는 경우
       _M_data_allocator.construct(_M_finish);
       ++_M_finish;
     }
-    else // case2. 재할당이 필요한 경우
+    else // case2: 재할당이 필요한 경우
       _M_insert_aux(end());
   }
 
@@ -310,7 +346,7 @@ public:
 
   // swap() :
   // 인자로 들어온 (타입이 같은) 또다른 vector와 가지고 있던 메모리를 바꾸어 가진다.
-  // 비멤버함수 swap이 vector에 대해 사용될 경우 vector의 멤버함수 swap을 쓰도록 오버로딩되어 있다.
+  // 비멤버함수 swap이 vector에 대해 사용될 경우 이 swap을 쓰도록 오버로딩되어 있다.
   void swap(vector<_Type, _AllocatorType>& __x) {
     std::swap(_M_start, __x._M_start);
     std::swap(_M_finish, __x._M_finish);
@@ -360,45 +396,68 @@ public:
   ~vector()
   { _M_destroy(_M_start, _M_finish); }
 
-  // ASSIGN OPERATOR
+  // ASSIGN OPERATOR (대입연산자)
+  // 컨테이너에 새 내용을 대입하고 현재 내용을 바꾸고 그에 따라 size를 수정한다.
   vector<_Type,_AllocatorType>& operator=(const vector<_Type, _AllocatorType>& __x) {
   if (&__x != this) {
     const size_type __xlen = __x.size();
-    if (__xlen > capacity()) {
-      pointer __tmp = _M_allocate_and_copy(__xlen, __x.begin(), __x.end());
+    if (__xlen > capacity()) {  // case1: capacity가 모자라 재할당이 필요한 경우
+      pointer __tmp = _M_allocate_and_copy(__xlen, __x.begin(), __x.end()); // __tmp: __x의 사본
+      
+      // 기존 메모리 삭제
       _M_destroy(_M_start, _M_finish);
       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
+      
+      // 새로운 공간에 연결
       _M_start = __tmp;
       _M_end_of_storage = _M_start + __xlen;
     }
-    else if (size() >= __xlen) {
-      iterator __i(copy(__x.begin(), __x.end(), begin()));
+
+    else if (size() >= __xlen) { // case2: 덮어쓰고 남는 뒷부분을 destroy해야 하는 경우
+      iterator __i(std::copy(__x.begin(), __x.end(), begin()));
       _M_destroy(__i, end());
     }
-    else {
-      copy(__x.begin(), __x.begin() + size(), _M_start);
-      std::uninitialized_copy(__x.begin() + size(), __x.end(), _M_finish);
+    
+    else { // case3: size가 작아서 덮어쓰고 일부 생성해야 하는 경우
+      std::copy(__x.begin(), __x.begin() + size(), _M_start); // 복사(만)
+      std::uninitialized_copy(__x.begin() + size(), __x.end(), _M_finish); // 생성
     }
+
     _M_finish = _M_start + __xlen;
   }
   return *this;
 }
 
-  // ASSIGN FUNCTION
+  // assign() :
+  // 벡터에 새 내용을 대입하고 현재 내용을 바꾸고 size를 수정한다.
 
-  // assign(), a generalized assignment member function.  Two
-  // versions: one that takes a count, and one that takes a range.
-  // The range version is a member template, so we dispatch on whether
-  // or not the type is an integer.
+  // assign1. 채우기
+  // __n개의 요소를 __val의 복사본으로 초기화한다.
+  // (대입연산자, assign2-forward iterator와 분기가 거의 비슷하다.)
+  void assign(size_type __n, const _Type& __val) {
+    if (__n > capacity()) { // case1: capacity가 모자라 재할당이 필요한 경우
+      vector<_Type, _AllocatorType> __tmp(__n, __val, get_allocator());
+      __tmp.swap(*this);
+    }
+    else if (__n > size()) { // case2: size가 작아서 덮어쓰고 일부 생성이 필요한 경우
+      std::fill(begin(), end(), __val); // 복사(만)
+      _M_finish = std::uninitialized_fill_n(_M_finish, __n - size(), __val); // 생성
+    }
+    else { // case3: 덮어쓰고 남는 뒷부분을 destroy해야 하는 경우
+      std::fill_n(begin(), __n, __val); // 복사
+      erase(begin() + __n, end()); // 복사하고 남은 뒷부분을 벡터에서 삭제
+    }
+  }
 
-  // assign1.
-  void assign(size_type __n, const _Type& __val) { _M_fill_assign(__n, __val); }
-
-  // assign2.
+  // assign2. 범위
+  // [first, last] 범위에 있는 요소를 동일한 순서로 생성하여 대입한다.
   template<typename _InputIterator>
-  void assign(_InputIterator __first, _InputIterator __last) {
-    typedef typename _Is_integer<_InputIterator>::_Integral _Integral;
-    _M_assign_dispatch(__first, __last, _Integral());
+  void assign(
+    typename std::enable_if<!std::is_integral<InputIterator>::value,
+    _InputIterator>::type __first, 
+    _InputIterator __last) {
+    typedef typename iterator_traits<_InputIterator>::iterator_category _IterCategory;
+    _M_assign_aux(__first, __last, _IterCategory());
   }
 
   //ALLOCATOR
@@ -433,22 +492,140 @@ protected:
     }
 
   // _M_range_initialize() :
-  //  vector를 [__first, __last) 구간의 값과 동일하게 (값을 복사하여) 초기화해준다.
+  // vector를 [__first, __last) 구간의 값과 동일하게 (값을 복사하여) 초기화해준다.
 
-  // _M_range_initialize1. input iterator
+  // _M_range_initialize1. input iterator는 여기로 들어온다.
   template <typename _InputIterator>
   void _M_range_initialize(_InputIterator __first, _InputIterator __last, std::input_iterator_tag) {
     for ( ; __first != __last; ++__first) // forward iterator가 아닐 경우 하나하나 할당해주어야 한다.
       push_back(*__first);
   }
 
-  // _M_range_initialize2. forward iterator와 forward iterator의 파생클래스
+  // _M_range_initialize2. forward iterator와 forward iterator의 파생클래스는 여기로 들어온다.
   template <typename _ForwardIterator>
   void _M_range_initialize(_ForwardIterator __first, _ForwardIterator __last, std::forward_iterator_tag) {
     size_type __n = std::distance(__first, __last);
     _M_start = _M_allocate(__n);
     _M_end_of_storage = _M_start + __n;
     _M_finish = std::uninitialized_copy(__first, __last, _M_start);
+  }
+
+  // _M_range_insert() :
+  // vector를 [__first, __last) 구간의 값과 동일하게 (값을 복사하여) 삽입한다.
+
+  // _M_range_insert1. input iterator는 여기로 들어온다.
+  template <typename _InputIterator>
+  void _M_range_insert(iterator __pos, _InputIterator __first, _InputIterator __last, input_iterator_tag)
+  {
+    for ( ; __first != __last; ++__first) { // forward iterator가 아닐 경우 하나하나 넣어주어야 한다.
+      __pos = insert(__pos, *__first); // insert1(단일 요소) 호출
+      ++__pos;
+    }
+  }
+
+  // _M_range_insert2. forward iterator와 forward iterator의 파생클래스는 여기로 들어온다.
+  template <typename _ForwardIterator>
+  void _M_range_insert(iterator __position, _ForwardIterator __first, _ForwardIterator __last, forward_iterator_tag)
+  {
+    if (__first != __last) { // (유효하지 않은 범위는 undefined behavior이나, 이 경우에 한하여 막아주기로 한다.)
+      size_type __n = std::abs(std::distance(__first, __last));
+
+      if (size_type(_M_end_of_storage - _M_finish) >= __n) { // case1: 빈 공간이 충분할 때
+
+        const size_type __elems_after = end() - __position;
+        iterator __old_finish(_M_finish);
+        
+        if (__elems_after > __n) { // case1-1. 새로 넣는 요소가 기존에 생성되어 있는 요소에 복사될 수 있을 때
+        // 예) vector: [12345], *__position == 2, [first, last) == [AB]
+
+          std::uninitialized_copy(_M_finish - __n, _M_finish, _M_finish); // [1234545] : 45를 **생성**
+          _M_finish += __n;
+          std::copy_backward(__position, __old_finish - __n, __old_finish); // [1232345] : 23을 복사
+          copy(__first, __last, __position); // [1AB2345] : AB를 복사
+        }
+        
+        else { // case1-2. 새로 넣는 요소가 기존에 생성되어 있는 요소들을 넘어선 위치에 들어가야 할 때
+        // 예) vector: [123], *__position == 2, [first, last) == [ABCD]
+          _ForwardIterator __mid = __first;
+          std::advance(__mid, __elems_after); // (__mid += __elems_after와 동일하게 동작)
+          std::uninitialized_copy(__mid, __last, _M_finish); // [123CD] : CD를 **생성**
+          _M_finish += __n - __elems_after;
+          std::uninitialized_copy(__position, __old_finish, _M_finish); // [123CD23]: 23을 **생성**
+          _M_finish += __elems_after;
+          copy(__first, __mid, __position); // [1ABCD23]: AB를 복사
+        }
+      }
+      else { // case2: 빈 공간이 부족할 때 (재할당이 필요할 때)
+        const size_type __old_size = size();
+        const size_type __len = __old_size +
+          std::max(__old_size, __n); // __old_size: 메모리할당 정책에 따라 기존의 2배 / __n: 그보다 더 필요할 경우 __n만큼
+        
+        iterator __new_start(_M_allocate(__len));
+        iterator __new_finish(__new_start);
+        
+        try {
+          __new_finish = std::uninitialized_copy(iterator(_M_start), __position, __new_start);
+          __new_finish = std::uninitialized_copy(__first, __last, __new_finish);
+          __new_finish = std::uninitialized_copy(__position, iterator(_M_finish), __new_finish);
+        }
+        catch(...) // (case2는 strong gurantee)
+  {
+    _M_destroy(__new_start,__new_finish);
+    _M_deallocate(__new_start.base(), __len);
+    throw; // (발생한 예외를 다시 던진다.)
+  }
+        
+        _M_destroy(_M_start, _M_finish);
+        _M_deallocate(_M_start, _M_end_of_storage - _M_start);
+        _M_start = __new_start.base();
+        _M_finish = __new_finish.base();
+        _M_end_of_storage = __new_start.base() + __len;
+      }
+    }
+  }
+
+  // _M_assign_aux() :
+
+  // _M_assign_aux1. input iterator는 여기로 들어온다.
+  template <typename _InputIter>
+  void _M_assign_aux(_InputIter __first, _InputIter __last, input_iterator_tag) {
+    iterator __cur(begin());
+    for ( ; __first != __last && __cur != end(); ++__cur, ++__first) // forward iterator가 아닐 경우 하나하나 대입해주어야 한다.
+      *__cur = *__first;
+    if (__first == __last)
+      erase(__cur, end());
+    else
+      insert(end(), __first, __last);
+  }
+
+  // _M_assign_aux2. forward iterator와 forward iterator의 파생클래스는 여기로 들어온다.
+  // (대입연산자, assign1와 분기가 거의 비슷하다.)
+  template <typename _ForwardIter>
+  void _M_assign_aux(_ForwardIter __first, _ForwardIter __last, forward_iterator_tag) {
+    size_type __len = std::distance(__first, __last);
+
+    if (__len > capacity()) { // case1: capacity가 모자라 재할당이 필요한 경우
+      pointer __tmp(_M_allocate_and_copy(__len, __first, __last));
+
+      _M_destroy(_M_start, _M_finish);
+      _M_deallocate(_M_start, _M_end_of_storage - _M_start);
+
+      _M_start = __tmp;
+      _M_end_of_storage = _M_finish = _M_start + __len;
+    }
+
+    else if (size() >= __len) { // case2: 덮어쓰고 남는 뒷부분을 destroy해야 하는 경우
+      iterator __new_finish(std::copy(__first, __last, _M_start));
+      _M_destroy(__new_finish, end());
+      _M_finish = __new_finish.base();
+    }
+
+    else { // case3: size가 작아서 덮어쓰고 일부 생성이 필요한 경우
+      _ForwardIter __mid = __first;
+      std::advance(__mid, size());
+      std::copy(__first, __mid, _M_start); // 복사(만)
+      _M_finish = std::uninitialized_copy(__mid, __last, _M_finish); // 생성
+    }
   }
 
   // _M_allocate_and_copy() :
@@ -459,10 +636,11 @@ protected:
       std::uninitialized_copy(__first, __last, __result); // (destroy까지는 해준다.)
       return __result;
     }
-    catch(...) {
-      _M_deallocate(__result, __n);
-      throw; // (try에서 발생한 예외를 재발생시킨다.)
-    }
+    catch(...)
+  {
+    _M_deallocate(__result, __n);
+    throw; // (try에서 발생한 예외를 재발생시킨다.)
+  }
   }
 
   // _M_insert_aux() :
@@ -495,11 +673,12 @@ protected:
         ++__new_finish;
         __new_finish = std::uninitialized_copy(__position, iterator(_M_finish), __new_finish); // new: [1A234000]
       }
-      catch(...) {
-        _M_destroy(__new_start,__new_finish);
-        _M_deallocate(__new_start.base(),__len);
-        throw;
-        }
+      catch(...)
+    {
+      _M_destroy(__new_start,__new_finish);
+      _M_deallocate(__new_start.base(),__len);
+      throw;
+    }
       _M_destroy(begin(), end());
       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
       _M_start = __new_start.base();
@@ -532,11 +711,12 @@ protected:
         __new_finish = std::uninitialized_copy(__position, iterator(_M_finish),
           __new_finish);
       }
-      catch(...) {
-        _M_destroy(__new_start,__new_finish);
-        _M_deallocate(__new_start,__len);
-        throw;
-      }
+      catch(...)
+    {
+      _M_destroy(__new_start,__new_finish);
+      _M_deallocate(__new_start,__len);
+      throw;
+    }
       _M_destroy(begin(), end());
       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
       _M_start = __new_start;
@@ -545,80 +725,11 @@ protected:
     }
   }
 
-  // _M_assign_dispatch():
-
-  template<typename _Integer>
-  void _M_assign_dispatch(_Integer __n, _Integer __val, __true_type)
-  { _M_fill_assign((size_type) __n, (_Type) __val); }
-
-  template<typename _InputIter>
-  void _M_assign_dispatch(_InputIter __first, _InputIter __last, __false_type) {
-    typedef typename iterator_traits<_InputIter>::iterator_category _IterCategory;
-    _M_assign_aux(__first, __last, _IterCategory());
-  }
-
-
-  // _M_fill_assign():
-  void _M_fill_assign(size_t __n, const value_type& __val)
-  {
-    if (__n > capacity()) {
-      vector<_Type, _AllocatorType> __tmp(__n, __val, get_allocator());
-      __tmp.swap(*this);
-    }
-    else if (__n > size()) {
-      fill(begin(), end(), __val);
-      _M_finish = std::uninitialized_fill_n(_M_finish, __n - size(), __val);
-    }
-    else
-      erase(fill_n(begin(), __n, __val), end());
-  }
-
-  // _M_assign_aux() :
-
-  // _M_assign_aux1.
-  template <typename _InputIter>
-  void _M_assign_aux(_InputIter __first, _InputIter __last,
-                                          input_iterator_tag) {
-    iterator __cur(begin());
-    for ( ; __first != __last && __cur != end(); ++__cur, ++__first)
-      *__cur = *__first;
-    if (__first == __last)
-      erase(__cur, end());
-    else
-      insert(end(), __first, __last);
-  }
-
-  // _M_assign_aux2.
-  template <typename _ForwardIter>
-  void _M_assign_aux(_ForwardIter __first, _ForwardIter __last,
-                                    forward_iterator_tag) {
-    size_type __len = 0;
-    std::distance(__first, __last, __len);
-
-    if (__len > capacity()) {
-      pointer __tmp(_M_allocate_and_copy(__len, __first, __last));
-      _M_destroy(_M_start, _M_finish);
-      _M_deallocate(_M_start, _M_end_of_storage - _M_start);
-      _M_start = __tmp;
-      _M_end_of_storage = _M_finish = _M_start + __len;
-    }
-    else if (size() >= __len) {
-      iterator __new_finish(copy(__first, __last, _M_start));
-      _M_destroy(__new_finish, end());
-      _M_finish = __new_finish.base();
-    }
-    else {
-      _ForwardIter __mid = __first;
-      advance(__mid, size());
-      copy(__first, __mid, _M_start);
-      _M_finish = std::uninitialized_copy(__mid, __last, _M_finish);
-    }
-  }
-
   // _M_fill_insert() :
   void _M_fill_insert(iterator __position, size_type __n, const _Type& __x)
   {
     if (__n != 0) {
+
       if (size_type(_M_end_of_storage - _M_finish) >= __n) {
         _Type __x_copy = __x;
         const size_type __elems_after = end() - __position;
@@ -626,7 +737,7 @@ protected:
         if (__elems_after > __n) {
           std::uninitialized_copy(_M_finish - __n, _M_finish, _M_finish);
           _M_finish += __n;
-          copy_backward(__position, __old_finish - __n, __old_finish);
+          stdsLLcopy_backward(__position, __old_finish - __n, __old_finish);
           fill(__position, __position + __n, __x_copy);
         }
         else {
@@ -637,6 +748,7 @@ protected:
           fill(__position, __old_finish, __x_copy);
         }
       }
+
       else {
         const size_type __old_size = size();
         const size_type __len = __old_size + max(__old_size, __n);
@@ -652,7 +764,7 @@ protected:
   {
     _M_destroy(__new_start,__new_finish);
     _M_deallocate(__new_start.base(),__len);
-    __throw_exception_again;
+    throw;
   }
         _M_destroy(_M_start, _M_finish);
         _M_deallocate(_M_start, _M_end_of_storage - _M_start);
@@ -663,71 +775,7 @@ protected:
     }
   }
 
-  // _M_range_insert() :
-
-  // _M_range_insert1.
-  template <typename _InputIterator>
-  void _M_range_insert(iterator __pos, _InputIterator __first, _InputIterator __last, input_iterator_tag)
-  {
-    for ( ; __first != __last; ++__first) {
-      __pos = insert(__pos, *__first);
-      ++__pos;
-    }
-  }
-
-  // _M_range_insert2.
-  template <typename _ForwardIterator>
-  void _M_range_insert(iterator __position, _ForwardIterator __first, _ForwardIterator __last, forward_iterator_tag)
-  {
-    if (__first != __last) {
-      size_type __n = 0;
-      std::distance(__first, __last, __n);
-      if (size_type(_M_end_of_storage - _M_finish) >= __n) {
-        const size_type __elems_after = end() - __position;
-        iterator __old_finish(_M_finish);
-        if (__elems_after > __n) {
-          std::uninitialized_copy(_M_finish - __n, _M_finish, _M_finish);
-          _M_finish += __n;
-          copy_backward(__position, __old_finish - __n, __old_finish);
-          copy(__first, __last, __position);
-        }
-        else {
-          _ForwardIterator __mid = __first;
-          advance(__mid, __elems_after);
-          std::uninitialized_copy(__mid, __last, _M_finish);
-          _M_finish += __n - __elems_after;
-          std::uninitialized_copy(__position, __old_finish, _M_finish);
-          _M_finish += __elems_after;
-          copy(__first, __mid, __position);
-        }
-      }
-      else {
-        const size_type __old_size = size();
-        const size_type __len = __old_size + max(__old_size, __n);
-        iterator __new_start(_M_allocate(__len));
-        iterator __new_finish(__new_start);
-        try {
-          __new_finish = std::uninitialized_copy(iterator(_M_start),
-            __position, __new_start);
-          __new_finish = std::uninitialized_copy(__first, __last, __new_finish);
-          __new_finish
-            = std::uninitialized_copy(__position, iterator(_M_finish), __new_finish);
-        }
-        catch(...)
-  {
-    _M_destroy(__new_start,__new_finish);
-    _M_deallocate(__new_start.base(), __len);
-    __throw_exception_again;
-  }
-        _M_destroy(_M_start, _M_finish);
-        _M_deallocate(_M_start, _M_end_of_storage - _M_start);
-        _M_start = __new_start.base();
-        _M_finish = __new_finish.base();
-        _M_end_of_storage = __new_start.base() + __len;
-      }
-    }
-
-  }; // class vector
+}; // class vector
 
 
 // 비멤버함수
@@ -746,14 +794,6 @@ protected:
   {
     return lexicographical_compare(__x.begin(), __x.end(),
                                   __y.begin(), __y.end());
-  }
-
-  // swap을 오버로드한다.
-  // vector의 멤버함수 swap을 쓰도록 하여 swap의 동작을 vector에 최적화한다.
-  template <typename _Type, typename _AllocatorType>
-  inline void swap(vector<_Type, _AllocatorType>& __x, vector<_Type, _AllocatorType>& __y)
-  {
-    __x.swap(__y);
   }
 
   template <typename _Type, typename _AllocatorType>
@@ -780,6 +820,13 @@ protected:
     return !(__x < __y);
   }
 
-};
+  // swap() :
+  // swap을 오버로드한다.
+  // vector의 멤버함수 swap을 쓰도록 하여 swap의 동작을 vector에 최적화한다.
+  template <typename _Type, typename _AllocatorType>
+  inline void swap(vector<_Type, _AllocatorType>& __x, vector<_Type, _AllocatorType>& __y)
+  {
+    __x.swap(__y);
+  }
 
 } // namespace ft
