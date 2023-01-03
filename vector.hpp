@@ -37,6 +37,9 @@
   // std::fill_n(시작, n, value):
   //    시작부분부터 n개의 요소에 value를 대입한다. (단, C++98은 반환값이 없다.)
 
+  // std::equal(1의 시작, 1의 끝, 2의 시작):
+  //    1과 2, 두 범위의 요소가 같은지 여부를 반환한다.
+
 #include <cstdlib>
   // std::abs(n):
   //  n의 절대값 absolute value을 반환한다.
@@ -568,13 +571,70 @@ protected:
           __new_finish = std::uninitialized_copy(__first, __last, __new_finish);
           __new_finish = std::uninitialized_copy(__position, iterator(_M_finish), __new_finish);
         }
-        catch(...) // (case2는 strong gurantee)
-  {
-    _M_destroy(__new_start,__new_finish);
-    _M_deallocate(__new_start.base(), __len);
-    throw; // (발생한 예외를 다시 던진다.)
-  }
+        catch(...) // (insert()는 재할당이 필요한 경우에 한하여 strong gurantee)
+        {
+      _M_destroy(__new_start,__new_finish);
+      _M_deallocate(__new_start.base(), __len);
+      throw; // (발생한 예외를 다시 던진다.)
+        }
         
+        _M_destroy(_M_start, _M_finish);
+        _M_deallocate(_M_start, _M_end_of_storage - _M_start);
+        _M_start = __new_start.base();
+        _M_finish = __new_finish.base();
+        _M_end_of_storage = __new_start.base() + __len;
+      }
+    }
+  }
+
+  // _M_fill_insert() :
+  // _M_range_insert()와 비슷하게 작동한다.
+  void _M_fill_insert(iterator __position, size_type __n, const _Type& __x)
+  {
+    if (__n != 0) {
+
+      if (size_type(_M_end_of_storage - _M_finish) >= __n) { // case1: 넣을 공간이 충분한 경우
+        _Type __x_copy = __x;
+        const size_type __elems_after = end() - __position;
+        iterator __old_finish(_M_finish);
+
+        if (__elems_after > __n) {
+          // 예) old: [12345], x: [AA], *position == 2
+          std::uninitialized_copy(_M_finish - __n, _M_finish, _M_finish); // [1234545]: 생성
+          _M_finish += __n;
+          std::copy_backward(__position, __old_finish - __n, __old_finish); // [1232345]: 복사
+          std::fill(__position, __position + __n, __x_copy); // [1AA2345]: 복사
+        }
+
+        else {
+          // 예) old: [123], x: [AAA], *position == 2
+          std::uninitialized_fill_n(_M_finish, __n - __elems_after, __x_copy); // [123A]: 생성
+          _M_finish += __n - __elems_after;
+          std::uninitialized_copy(__position, __old_finish, _M_finish); // [123A23]: 생성
+          _M_finish += __elems_after;
+          std::fill(__position, __old_finish, __x_copy); // [1AAA23]: 복사
+        }
+      }
+
+      else { // case2: 넣을 공간이 부족해 재할당이 필요한 경우
+        const size_type __old_size = size();
+        const size_type __len = __old_size +
+           std::max(__old_size, __n); // __old_size: 메모리할당 정책에 따라 기존의 2배 / __n: 그보다 더 필요할 경우 __n만큼
+     
+        iterator __new_start(_M_allocate(__len));
+        iterator __new_finish(__new_start);
+        
+        try {
+          __new_finish = std::uninitialized_copy(begin(), __position, __new_start);
+          __new_finish = std::uninitialized_fill_n(__new_finish, __n, __x);
+          __new_finish = std::uninitialized_copy(__position, end(), __new_finish);
+        }
+        catch(...) // (insert()는 재할당이 필요한 경우에 한하여 strong gurantee)
+        {
+      _M_destroy(__new_start,__new_finish);
+      _M_deallocate(__new_start.base(),__len);
+      throw; // (발생한 예외를 다시 던진다.)
+        }
         _M_destroy(_M_start, _M_finish);
         _M_deallocate(_M_start, _M_end_of_storage - _M_start);
         _M_start = __new_start.base();
@@ -637,10 +697,10 @@ protected:
       return __result;
     }
     catch(...)
-  {
-    _M_deallocate(__result, __n);
-    throw; // (try에서 발생한 예외를 재발생시킨다.)
-  }
+    {
+  _M_deallocate(__result, __n);
+  throw; // (try에서 발생한 예외를 재발생시킨다.)
+    }
   }
 
   // _M_insert_aux() :
@@ -674,11 +734,11 @@ protected:
         __new_finish = std::uninitialized_copy(__position, iterator(_M_finish), __new_finish); // new: [1A234000]
       }
       catch(...)
-    {
-      _M_destroy(__new_start,__new_finish);
-      _M_deallocate(__new_start.base(),__len);
-      throw;
-    }
+      {
+    _M_destroy(__new_start,__new_finish);
+    _M_deallocate(__new_start.base(),__len);
+    throw;
+      }
       _M_destroy(begin(), end());
       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
       _M_start = __new_start.base();
@@ -712,11 +772,11 @@ protected:
           __new_finish);
       }
       catch(...)
-    {
-      _M_destroy(__new_start,__new_finish);
-      _M_deallocate(__new_start,__len);
-      throw;
-    }
+      {
+    _M_destroy(__new_start,__new_finish);
+    _M_deallocate(__new_start,__len);
+    throw;
+      }
       _M_destroy(begin(), end());
       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
       _M_start = __new_start;
@@ -725,104 +785,51 @@ protected:
     }
   }
 
-  // _M_fill_insert() :
-  void _M_fill_insert(iterator __position, size_type __n, const _Type& __x)
-  {
-    if (__n != 0) {
-
-      if (size_type(_M_end_of_storage - _M_finish) >= __n) {
-        _Type __x_copy = __x;
-        const size_type __elems_after = end() - __position;
-        iterator __old_finish(_M_finish);
-        if (__elems_after > __n) {
-          std::uninitialized_copy(_M_finish - __n, _M_finish, _M_finish);
-          _M_finish += __n;
-          stdsLLcopy_backward(__position, __old_finish - __n, __old_finish);
-          fill(__position, __position + __n, __x_copy);
-        }
-        else {
-          std::uninitialized_fill_n(_M_finish, __n - __elems_after, __x_copy);
-          _M_finish += __n - __elems_after;
-          std::uninitialized_copy(__position, __old_finish, _M_finish);
-          _M_finish += __elems_after;
-          fill(__position, __old_finish, __x_copy);
-        }
-      }
-
-      else {
-        const size_type __old_size = size();
-        const size_type __len = __old_size + max(__old_size, __n);
-        iterator __new_start(_M_allocate(__len));
-        iterator __new_finish(__new_start);
-        try {
-          __new_finish = std::uninitialized_copy(begin(), __position, __new_start);
-          __new_finish = std::uninitialized_fill_n(__new_finish, __n, __x);
-          __new_finish
-            = std::uninitialized_copy(__position, end(), __new_finish);
-        }
-        catch(...)
-  {
-    _M_destroy(__new_start,__new_finish);
-    _M_deallocate(__new_start.base(),__len);
-    throw;
-  }
-        _M_destroy(_M_start, _M_finish);
-        _M_deallocate(_M_start, _M_end_of_storage - _M_start);
-        _M_start = __new_start.base();
-        _M_finish = __new_finish.base();
-        _M_end_of_storage = __new_start.base() + __len;
-      }
-    }
-  }
-
 }; // class vector
 
 
-// 비멤버함수
+// 비멤버함수 (관련 연산자)
+// __x와 __y 벡터 컨테이너 간의 적절한 비교연산을 수행한다.
+// no-throw guarantee: 요소가 적절한 no_throw guarantee를 지원할 경우
 
+// (1) size를 비교한 뒤 같으면 (2) equal()로 요소들을 비교하는 것과 동일하게 동작한다.
+// 다른 요소가 발견된 곳에서 멈춘다.
   template <typename _Type, typename _AllocatorType>
-  inline bool
-  operator==(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y)
-  {
+  inline bool operator==(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return __x.size() == __y.size() &&
-          equal(__x.begin(), __x.end(), __y.begin());
+          std::equal(__x.begin(), __x.end(), __y.begin());
+  }
+
+  // lexicographical_compare()를 사용하는 것과 동일하게 동작한다.
+  // 즉 operator<를 사용하여 a<b, b<a 모두 확인하고, 처음 비교가 가능한 곳에서 멈춘다.
+  template <typename _Type, typename _AllocatorType>
+  inline bool operator<(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+    return std::lexicographical_compare(__x.begin(), __x.end(), __y.begin(), __y.end());
   }
 
   template <typename _Type, typename _AllocatorType>
-  inline bool
-  operator<(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y)
-  {
-    return lexicographical_compare(__x.begin(), __x.end(),
-                                  __y.begin(), __y.end());
-  }
-
-  template <typename _Type, typename _AllocatorType>
-  inline bool
-  operator!=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator!=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return !(__x == __y);
   }
 
   template <typename _Type, typename _AllocatorType>
-  inline bool
-  operator>(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator>(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return __y < __x;
   }
 
   template <typename _Type, typename _AllocatorType>
-  inline bool
-  operator<=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator<=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return !(__y < __x);
   }
 
   template <typename _Type, typename _AllocatorType>
-  inline bool
-  operator>=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator>=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return !(__x < __y);
   }
 
   // swap() :
-  // swap을 오버로드한다.
-  // vector의 멤버함수 swap을 쓰도록 하여 swap의 동작을 vector에 최적화한다.
+  // 목적(1) swap을 오버로드한다.
+  // 목적(2) vector의 멤버함수 swap을 쓰도록 하여 swap의 동작을 vector에 최적화한다.
   template <typename _Type, typename _AllocatorType>
   inline void swap(vector<_Type, _AllocatorType>& __x, vector<_Type, _AllocatorType>& __y)
   {
