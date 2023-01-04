@@ -132,7 +132,7 @@ public:
   typedef const value_type&  const_reference;
 
   typedef typename  allocator_type::pointer pointer;
-  typedef const typename  allocator_type::const_pointer const_pointer;
+  typedef typename  allocator_type::const_pointer const_pointer;
 
    typedef __normal_iterator<pointer, vector_type>  iterator; // 임의접근반복자. const iterator로 변형이 가능하다.
    typedef __normal_iterator<const_pointer, vector_type>  const_iterator; //임의접근반복자.
@@ -228,7 +228,7 @@ public:
     if (capacity() < __n) {
       const size_type __old_size = size();
       pointer __tmp = _M_allocate_and_copy(__n, _M_start, _M_finish);
-      _M_destroy(_M_start, _M_finish);
+      _M_destroy(begin(), end());
       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
       _M_start = __tmp;
       _M_finish = __tmp + __old_size;
@@ -408,7 +408,7 @@ public:
 
   // DESTRUCTOR
   ~vector()
-  { _M_destroy(_M_start, _M_finish); }
+  { _M_destroy(begin(), end()); }
 
   // ASSIGN OPERATOR (대입연산자)
   // 컨테이너에 새 내용을 대입하고 현재 내용을 바꾸고 그에 따라 size를 수정한다.
@@ -419,7 +419,7 @@ public:
       pointer __tmp = _M_allocate_and_copy(__xlen, __x.begin(), __x.end()); // __tmp: __x의 사본
       
       // 기존 메모리 삭제
-      _M_destroy(_M_start, _M_finish);
+      _M_destroy(begin(), end());
       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
       
       // 새로운 공간에 연결
@@ -490,13 +490,13 @@ protected:
   template <typename _ForwardIterator>
   void _M_destroy(_ForwardIterator __first, _ForwardIterator __last) {
     for (; __first != __last; ++__first)
-      get_allocator().destroy(__first);
+      get_allocator().destroy(__first.base());
   }
 
   // _M_destroy2. 단일 요소
   template <typename _ForwardIterator>
   void _M_destory(_ForwardIterator __position) {
-      get_allocator().destroy(__position);
+      get_allocator().destroy(__position.base());
   }
 
   // _M_range_check() :
@@ -529,7 +529,7 @@ protected:
 
   // _M_range_insert1. input iterator는 여기로 들어온다.
   template <typename _InputIterator>
-  void _M_range_insert(iterator __pos, _InputIterator __first, _InputIterator __last, input_iterator_tag)
+  void _M_range_insert(iterator __pos, _InputIterator __first, _InputIterator __last, std::input_iterator_tag)
   {
     for ( ; __first != __last; ++__first) { // forward iterator가 아닐 경우 하나하나 넣어주어야 한다.
       __pos = insert(__pos, *__first); // insert1(단일 요소) 호출
@@ -539,7 +539,7 @@ protected:
 
   // _M_range_insert2. forward iterator와 forward iterator의 파생클래스는 여기로 들어온다.
   template <typename _ForwardIterator>
-  void _M_range_insert(iterator __position, _ForwardIterator __first, _ForwardIterator __last, forward_iterator_tag)
+  void _M_range_insert(iterator __position, _ForwardIterator __first, _ForwardIterator __last, std::forward_iterator_tag)
   {
     if (__first != __last) { // (유효하지 않은 범위는 undefined behavior이나, 이 경우에 한하여 막아주기로 한다.)
       size_type __n = std::abs(std::distance(__first, __last));
@@ -589,7 +589,7 @@ protected:
       throw; // (발생한 예외를 다시 던진다.)
         }
         
-        _M_destroy(_M_start, _M_finish);
+        _M_destroy(begin(), end());
         _M_deallocate(_M_start, _M_end_of_storage - _M_start);
         _M_start = __new_start.base();
         _M_finish = __new_finish.base();
@@ -646,7 +646,7 @@ protected:
       _M_deallocate(__new_start.base(),__len);
       throw; // (발생한 예외를 다시 던진다.)
         }
-        _M_destroy(_M_start, _M_finish);
+        _M_destroy(begin(), end());
         _M_deallocate(_M_start, _M_end_of_storage - _M_start);
         _M_start = __new_start.base();
         _M_finish = __new_finish.base();
@@ -659,7 +659,7 @@ protected:
 
   // _M_assign_aux1. input iterator는 여기로 들어온다.
   template <typename _InputIter>
-  void _M_assign_aux(_InputIter __first, _InputIter __last, input_iterator_tag) {
+  void _M_assign_aux(_InputIter __first, _InputIter __last, std::input_iterator_tag) {
     iterator __cur(begin());
     for ( ; __first != __last && __cur != end(); ++__cur, ++__first) // forward iterator가 아닐 경우 하나하나 대입해주어야 한다.
       *__cur = *__first;
@@ -672,13 +672,13 @@ protected:
   // _M_assign_aux2. forward iterator와 forward iterator의 파생클래스는 여기로 들어온다.
   // (대입연산자, assign1와 분기가 거의 비슷하다.)
   template <typename _ForwardIter>
-  void _M_assign_aux(_ForwardIter __first, _ForwardIter __last, forward_iterator_tag) {
+  void _M_assign_aux(_ForwardIter __first, _ForwardIter __last, std::forward_iterator_tag) {
     size_type __len = std::distance(__first, __last);
 
     if (__len > capacity()) { // case1: capacity가 모자라 재할당이 필요한 경우
       pointer __tmp(_M_allocate_and_copy(__len, __first, __last));
 
-      _M_destroy(_M_start, _M_finish);
+      _M_destroy(begin(), end());
       _M_deallocate(_M_start, _M_end_of_storage - _M_start);
 
       _M_start = __tmp;

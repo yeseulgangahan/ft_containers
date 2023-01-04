@@ -1,19 +1,13 @@
 // This file contains all of the general iterator-related utility
 // types, such as iterator_traits and struct iterator.
 
+#include <iterator>
+
 #include <cstddef>
   //std::ptrdiff_t: Result of pointer subtraction
 
 namespace ft
 {
-  // iterator category
-
-  struct input_iterator_tag {};
-  struct output_iterator_tag {};
-  struct forward_iterator_tag : public input_iterator_tag {};
-  struct bidirectional_iterator_tag : public forward_iterator_tag {};
-  struct random_access_iterator_tag : public bidirectional_iterator_tag {};
-
   // base of all iterator
   // : implement an iterator by inheriting from this.
 
@@ -44,17 +38,17 @@ namespace ft
   // _Type* specialization
   template<typename _Type>
     struct iterator_traits<_Type*> {
-      typedef random_access_iterator_tag    iterator_category;
-      typedef _Type                         value_type;
-      typedef std::ptrdiff_t                difference_type;
-      typedef _Type*                        pointer;
-      typedef _Type&                        reference;
+      typedef std::random_access_iterator_tag iterator_category;
+      typedef _Type                           value_type;
+      typedef std::ptrdiff_t                  difference_type;
+      typedef _Type*                          pointer;
+      typedef _Type&                          reference;
     };
 
   // const _Type* specialization
   template<typename _Type>
     struct iterator_traits<const _Type*> {
-      typedef random_access_iterator_tag    iterator_category;
+      typedef std::random_access_iterator_tag    iterator_category;
       typedef _Type                         value_type;
       typedef std::ptrdiff_t                difference_type;
       typedef const _Type*                  pointer;

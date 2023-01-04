@@ -10,13 +10,15 @@
 //#endif
 
 #include "vector.hpp"
+#include <iostream>
 
 int  main()
 {
   ft::vector<int> v;
+
+  v.push_back(42);
+  std::cout << v.at(0) << std::endl;
 }
-
-
 
 
 
