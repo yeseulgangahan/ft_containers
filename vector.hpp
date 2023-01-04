@@ -44,8 +44,19 @@
   // std::abs(n):
   //  n의 절대값 absolute value을 반환한다.
 
+#include <stdexcept>
+  // stds::out_of_range
+
 #include "iterator.hpp"
   // ft::__normal_iterator
+
+#include "algorithm.hpp"
+  // ft::equal()
+  // ft::lexicographical_compare()
+
+#include "type_traits.hpp"
+  // ft::enable_if
+  // ft::is_integral
 
 namespace ft
 {
@@ -96,7 +107,7 @@ template <
 > class vector : protected _Vector_base<_Type, _AllocatorType>
 {
 
-// (멤버함수의 순서는 cppreference.com의 순서를 따라 정렬했습니다.)
+// (멤버함수의 순서는 cppreference.com의 순서를 따라 정렬했다.)
 
 private:
   typedef _Vector_base<_Type, _AllocatorType> _Base;
@@ -253,7 +264,7 @@ public:
   iterator insert(iterator __position, const _Type& __x) {
     size_type __n = __position - begin();
     if (_M_finish != _M_end_of_storage && __position == end()) { // case1: 맨 끝에 넣는 경우
-      _M_data_allocator.construct(_M_finish, __x);
+      get_allocator().construct(_M_finish, __x);
       ++_M_finish;
     }
     else // case2: 중간에 넣는 경우
@@ -270,7 +281,7 @@ public:
   template<typename _InputIterator>
   void insert(
     iterator __pos, 
-    typename std::enable_if<!std::is_integral<_InputIterator>::value,
+    typename ft::enable_if<!ft::is_integral<_InputIterator>::value,
     _InputIterator>::type __first,
     _InputIterator __last) {
     typedef typename iterator_traits<_InputIterator>::iterator_category _IterCategory;
@@ -313,7 +324,7 @@ public:
   // push_back1. 특정 객체의 복사본 삽입
   void push_back(const _Type& __x) {
     if (_M_finish != _M_end_of_storage) { // case1: 빈 공간이 있는 경우
-      _M_data_allocator.construct(_M_finish, __x);
+      get_allocator().construct(_M_finish, __x);
       ++_M_finish;
     }
     else // case2: 재할당이 필요한 경우
@@ -323,7 +334,7 @@ public:
 // push_back2. 빈 객체 삽입
   void push_back() {
     if (_M_finish != _M_end_of_storage) { // case1: 빈 공간이 있는 경우
-      _M_data_allocator.construct(_M_finish);
+      get_allocator().construct(_M_finish);
       ++_M_finish;
     }
     else // case2: 재할당이 필요한 경우
@@ -380,7 +391,7 @@ public:
   // 단, 만약 [__first, __last) 가 유효하지 않다면, 그것은 undefined behavior다.
   template <typename _InputIterator>
     vector(
-      typename std::enable_if<!std::is_integral<_InputIterator>::value,// 정수인지 확인한다. 정수라면 반복자가 아니라는 뜻이므로 SFINE에 의해 constructor2를 찾아간다.
+      typename ft::enable_if<!ft::is_integral<_InputIterator>::value,// 정수인지 확인한다. 정수라면 반복자가 아니라는 뜻이므로 SFINE에 의해 constructor2를 찾아간다.
       _InputIterator>::type  __first,
       _InputIterator __last,
       const allocator_type& __a = allocator_type()
@@ -456,7 +467,7 @@ public:
   // [first, last] 범위에 있는 요소를 동일한 순서로 생성하여 대입한다.
   template<typename _InputIterator>
   void assign(
-    typename std::enable_if<!std::is_integral<InputIterator>::value,
+    typename ft::enable_if<!ft::is_integral<_InputIterator>::value,
     _InputIterator>::type __first, 
     _InputIterator __last) {
     typedef typename iterator_traits<_InputIterator>::iterator_category _IterCategory;
@@ -478,20 +489,20 @@ protected:
   // _M_destroy1. 범위
   template <typename _ForwardIterator>
   void _M_destroy(_ForwardIterator __first, _ForwardIterator __last) {
-    for (; __first != last; ++first)
-      _M_data_allocator.destroy(__first);
+    for (; __first != __last; ++__first)
+      get_allocator().destroy(__first);
   }
 
   // _M_destroy2. 단일 요소
   template <typename _ForwardIterator>
   void _M_destory(_ForwardIterator __position) {
-      _M_data_allocator.destroy(__position);
+      get_allocator().destroy(__position);
   }
 
   // _M_range_check() :
     void _M_range_check(size_type __n) const {
       if (__n >= this->size())
-        __throw_out_of_range("vector");
+        std::out_of_range("vector");
     }
 
   // _M_range_initialize() :
@@ -713,7 +724,7 @@ protected:
     if (_M_finish != _M_end_of_storage) { // case1: 아직 빈 자리가 있는 경우
       // if, old: [12340], *position == 2, x == A (0 represents empty space)
 
-      _M_data_allocator.construct(_M_finish, *(_M_finish - 1)); // [12344]
+      get_allocator().construct(_M_finish, *(_M_finish - 1)); // [12344]
       ++_M_finish;
       std::copy_backward(__position, iterator(_M_finish - 2), iterator(_M_finish - 1)); // [12234] (값만 복사하므로 destroy는 필요없다.)
       _Type __x_copy = __x; // 지역변수로 복사생성
@@ -729,7 +740,7 @@ protected:
       iterator __new_finish(__new_start);
       try {
         __new_finish = std::uninitialized_copy(iterator(_M_start), __position, __new_start); // new: [10000000]
-        _M_data_allocator.construct(__new_finish.base(), __x); // new: [1A000000]
+        get_allocator().construct(__new_finish.base(), __x); // new: [1A000000]
         ++__new_finish;
         __new_finish = std::uninitialized_copy(__position, iterator(_M_finish), __new_finish); // new: [1A234000]
       }
@@ -752,7 +763,7 @@ protected:
   void _M_insert_aux(iterator __position)
   {
     if (_M_finish != _M_end_of_storage) {
-      _M_data_allocator.construct(_M_finish, *(_M_finish - 1));
+      get_allocator().construct(_M_finish, *(_M_finish - 1));
       ++_M_finish;
       copy_backward(__position, iterator(_M_finish - 2),
       iterator(_M_finish - 1));
@@ -766,7 +777,7 @@ protected:
       try {
         __new_finish = std::uninitialized_copy(iterator(_M_start), __position,
           __new_start);
-        _M_data_allocator.construct(__new_finish);
+        get_allocator().construct(__new_finish);
         ++__new_finish;
         __new_finish = std::uninitialized_copy(__position, iterator(_M_finish),
           __new_finish);

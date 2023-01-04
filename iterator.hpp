@@ -6,8 +6,6 @@ namespace ft
 
 // reverse_iterator
 // : 반복자 어댑터. 양방향 또는 임의엑세스 반복자가 범위를 반복하는 방향을 반대로 바꾼다.
-// 기본(원래)반복자는 내부적으로 유지된다. base()를 사용하면 기본반복자를 얻을 수 있다.
-
 
 template<typename _Iterator>
 class reverse_iterator 
@@ -18,7 +16,11 @@ class reverse_iterator
                     typename iterator_traits<_Iterator>::reference>
 {
   protected:
-    _Iterator current; // base 반복자
+    // base iterator란?
+    // : original iterator의 copy. 내부적으로 유지된다.
+    //   단, reverse iterator가 가리키는 요소의 다음 요소를 가리키고 있다. reverse iterator와 반대방향으로 반복한다.
+    //   base()를 사용하면 base iterator의 copy를 얻을 수 있다.
+    _Iterator current;
 
   public:
     typedef _Iterator    iterator_type;
@@ -32,26 +34,24 @@ class reverse_iterator
     // 내부의 base iterator는 value-initialized된다. 
     //
     // Q. value initialized란?
-    // A. 빈 이니셜라이저로 개체를 생성할 때 수행되는 초기화.
-    //    여기서는 Iterator()가 호출됨을 의미하고, Iterator가 사용자정의가 아닌 default constructor가 있는 타입이므로 값은 0으로 초기화된다.
+    // A. 이 경우에는 base iterator를 nullptr로 초기화해준다는 말이다.
     //
     // Q. 이 생성자는 어디에 쓸까?
-    // A. 우선 역반복자는 양방향반복자인데, 양방향반복자는 기본생성자를 지원해야 하기 때문이다.
-    // 
-    //
-    reverse_iterator() {}
-    
+    // A. 알고리즘 내부에서 사용할 수 있다.
+    reverse_iterator() : current(_Iterator()) { }
+
     // CONSTRUCTOR2. initialization
+    // 원본을 복제한다. 동작만 역으로 바뀐다.
     explicit reverse_iterator(iterator_type __x): current(__x) {}
     
     // CONSTRUCTOR3. copy
+    // 역반복자에서 역반복자를 생성한다. 생성된 객체는 __x와 동일하게 동작한다.
     reverse_iterator(const reverse_iterator& __x): current(__x.current) { }
 
-    template<typename _Iter>
-    reverse_iterator(const reverse_iterator<_Iter>& __x): current(__x.base()) {}
-  
-    iterator_type 
-    base() const { return current; }
+    //reverse_iterator(const reverse_iterator<_Iterator>& __x): current(__x.base()) {}
+
+    // base iterator의 복사를 반환한다.
+    iterator_type base() const { return current; }
 
     reference operator*() const {
       _Iterator __tmp = current;
@@ -82,22 +82,18 @@ class reverse_iterator
       return __tmp;
     }
     
-    reverse_iterator 
-    operator+(difference_type __n) const 
-    { return reverse_iterator(current - __n); }
+    reverse_iterator operator+(difference_type __n) const { return reverse_iterator(current - __n); }
 
-    reverse_iterator& 
-    operator+=(difference_type __n) {
+    reverse_iterator& operator+=(difference_type __n) {
       current -= __n;
       return *this;
     }
 
-    reverse_iterator 
-    operator-(difference_type __n) const 
+    reverse_iterator operator-(difference_type __n) const 
     { return reverse_iterator(current + __n); }
 
     reverse_iterator& operator-=(difference_type __n) {
-      _M_current += __n;
+      current += __n;
       return *this;
     }
 
@@ -106,62 +102,50 @@ class reverse_iterator
 
 template<typename _Iterator>
   inline bool 
-  operator==(const reverse_iterator<_Iterator>& __x, 
-        const reverse_iterator<_Iterator>& __y) 
+  operator==(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return __x.base() == __y.base(); }
 
 template<typename _Iterator>
   inline bool 
-  operator<(const reverse_iterator<_Iterator>& __x, 
-      const reverse_iterator<_Iterator>& __y) 
+  operator<(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return __y.base() < __x.base(); }
 
 template<typename _Iterator>
   inline bool 
-  operator!=(const reverse_iterator<_Iterator>& __x, 
-        const reverse_iterator<_Iterator>& __y) 
+  operator!=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return !(__x == __y); }
 
 template<typename _Iterator>
   inline bool 
-  operator>(const reverse_iterator<_Iterator>& __x, 
-      const reverse_iterator<_Iterator>& __y) 
+  operator>(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return __y < __x; }
 
 template<typename _Iterator>
   inline bool 
-  operator<=(const reverse_iterator<_Iterator>& __x, 
-  const reverse_iterator<_Iterator>& __y) 
+  operator<=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return !(__y < __x); }
 
 template<typename _Iterator>
   inline bool 
-  operator>=(const reverse_iterator<_Iterator>& __x, 
-        const reverse_iterator<_Iterator>& __y) 
+  operator>=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return !(__x < __y); }
 
 template<typename _Iterator>
   inline typename reverse_iterator<_Iterator>::difference_type
-  operator-(const reverse_iterator<_Iterator>& __x, 
-      const reverse_iterator<_Iterator>& __y) 
+  operator-(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return __y.base() - __x.base(); }
 
 template<typename _Iterator>
   inline reverse_iterator<_Iterator> 
-  operator+(typename reverse_iterator<_Iterator>::difference_type __n,
-      const reverse_iterator<_Iterator>& __x) 
+  operator+(typename reverse_iterator<_Iterator>::difference_type __n, const reverse_iterator<_Iterator>& __x) 
   { return reverse_iterator<_Iterator>(__x.base() - __n); }
 
 
 // normal_iterator
-// 1) it does not change the semantics of any of the operators of its iterator parameter.
-//
-// 2) Its primary purpose is to convert an iterator that is not a class, into an iterator that is a class.
-//		e.g. a pointer
-//
-// 3) The _Container parameter exists solely so that different containers
-// 		using this template can instantiate different types, even if the _Iterator parameter is the same.
-//		e.g. _normal_iterator< char*, vector<char> > != _normal_iterator< char*, basic_string<char> >
+// 1) 이 반복자 어댑터의 주요 목적은 클래스가 아닌 이터레이터(예: 포인터)를 클래스인 이터레이터로 변환하는 것이다. 
+// 2) 템플릿인자 _Iterator의 연산자들을 변경하지 않는다.
+// 3) 템플릿인자 _Container는 단독으로 존재한다(즉 다른 곳에서 사용되지 않는다). _Iterator가 동일하더라도 _Container가 다른 경우 다른 유형을 인스턴스화할 수 있도록 한다.
+//		예: _normal_iterator< char*, vector<char> > 와 _normal_iterator< char*, basic_string<char> > 는 다른 타입이다.
 
 template<typename _Iterator, typename _Container>
 class __normal_iterator
@@ -185,32 +169,29 @@ class __normal_iterator
     // CONSTRUCTOR (COPY)
     explicit __normal_iterator(const _Iterator& __i) : _M_current(__i) { }
 
-    // CONSTRUCTOR (COPY): Allow iterator to const_iterator conversion //질문:???
+    // CONSTRUCTOR (COPY)
     template<typename _Iter>
     inline __normal_iterator(const __normal_iterator<_Iter, _Container>& __i) : _M_current(__i.base()) { }
-
-    // copy assign: default
-    // destructor: default
 
     // 객체 내부에서 실제 쓰이고 있는 (int* 등의) 포인터를 const reference로 반환한다.
     const _Iterator& base() const { return _M_current; }
 
   public:
-  // random access iterator requirements
+  // random access iterator에 필요한 연산자
 
     // DEREFERENCE
 
-    // can be dereferenced as an rvalue or as an lvalue (for non-const iterators)
-    // e.g. a = *iter; *iter = a;
+    // rvalue 혹은 lvalue로써 역참조될 수 있다. (non-const iterators)
+    // 예: a = *iter; *iter = a;
     reference operator*() const { return *_M_current; }
 
-    // can be dereferenced as an rvalue
-    // use if the type is structure or union. translate as (*pointer).m
-    // e.g. iter->m;
+    // rvalue로써 역참조될 수 있다.
+    // 가리키는 요소가 struct이나 union일 때 사용된다. 예: iter->m;
+    // (*pointer).m 로 변환된다.
     pointer operator->() const { return _M_current; }
 
     // INCRESMENT
-    // : The result is either also dereferenceable or a past-the-end iterator
+    // : 이 결과는 역참조될 수 있거나 마지막을 가리키고 있다.
     __normal_iterator& operator++() { ++_M_current; return *this; }
     __normal_iterator operator++(int) { return __normal_iterator(_M_current++); }
 
@@ -219,7 +200,7 @@ class __normal_iterator
     __normal_iterator operator--(int) { return __normal_iterator(_M_current--); }
 
     // ARITHMETIC
-    // : between an iterator and an integer value
+    // : 반복자 + 정수타입
     __normal_iterator operator+(const difference_type& __n) const { return __normal_iterator(_M_current + __n); } // copy constructor creates a temporary object
     __normal_iterator operator-(const difference_type& __n) const { return __normal_iterator(_M_current - __n); }
 
@@ -228,7 +209,7 @@ class __normal_iterator
     __normal_iterator& operator-=(const difference_type& __n) { _M_current -= __n; return *this; }
 
     // SUBTRACT
-    // : subtracting an iterator from another
+    // : 반복자 - 반복자
     difference_type operator-(const __normal_iterator& __i) const { return _M_current - __i._M_current; }
 
     // OFFSET DEREFERENCE
@@ -238,11 +219,12 @@ class __normal_iterator
 
 
 
-// normal iterator operator
-// they shoulde be 1) normal iterator type, 2) same container type to use this operators
+// normal iterator 연산자
+// 이 연산자를 사용할 수 있으려면, 1) normal iterator 타입이어야 하고, 2) 같은 container 타입이어야 한다.
 
 // EQUALITY/UNEQUALITY
-// : Can be compared for equivalence. meaningful when both iterator values iterate over the same underlying sequence. (Forward iterator requirements)
+// : 같은지 비교한다. 두 반복자가 같은 시퀀스를 반복하고 있을 때 의미있다.
+// (정방향반복자 필수 연산자)
 
 template<typename _IteratorL, typename _IteratorR, typename _Container>
 inline bool operator==(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
@@ -253,7 +235,7 @@ inline bool operator!=(const __normal_iterator<_IteratorL, _Container>& __lhs, c
 { return !(__lhs == __rhs); }
 
 // INEQUALITY RELATIONAL
-// : Can be compared. (Random access iterator requirements)
+// : 비교한다. (랜덤액세스반복자 필수 연산자)
 
 template<typename _IteratorL, typename _IteratorR, typename _Container>
 inline bool operator<(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
@@ -272,8 +254,7 @@ inline bool operator>=(const __normal_iterator<_IteratorL, _Container>& __lhs, c
 { return !(__lhs < __rhs); }
 
 // ARITHMETIC
-// : between an iterator and an integer value (To support the commutative property.)
-
+// : 정수타입 + 반복자 (멤버함수에 operator+가 있지만, 교환법칙을 지원하기 위해서 비멤버함수로도 오버로딩을 해준다.)
 template<typename _Iterator, typename _Container>
 inline __normal_iterator<_Iterator, _Container> operator+(typename __normal_iterator<_Iterator, _Container>::difference_type __n, const __normal_iterator<_Iterator, _Container>& __i)
 { return __normal_iterator<_Iterator, _Container>(__i.base() + __n); }
