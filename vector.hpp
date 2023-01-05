@@ -49,6 +49,7 @@
 
 #include "iterator.hpp"
   // ft::__normal_iterator
+  // ft::reverse_iterator
 
 #include "algorithm.hpp"
   // ft::equal()
@@ -370,7 +371,7 @@ public:
 public:
   // CONSTRUCTOR
   // : vector를 생성하고 초기화한다.
-  // Exception safety: Strong guarantee
+  // Exception safety: Strong guarantee (예외가 발생해도 영향을 받지 않는다.)
 
   // constructor1. default constructor :
   // 빈 vector를 생성한다.
@@ -507,11 +508,16 @@ protected:
 
   // _M_range_initialize() :
   // vector를 [__first, __last) 구간의 값과 동일하게 (값을 복사하여) 초기화해준다.
+  // (constructor3. range에서 사용된다.)
 
   // _M_range_initialize1. input iterator는 여기로 들어온다.
+  // Q. input iterator는 왜 따로 처리해주어야 할까?
+  // A. input iterator는 단 한 번만 읽을 수 있기 때문이다.
+  //    input iterator의 특성은 ++연산을 하면 그 이전의 반복자는 역참조되거나 ==연산이 보장되지 않는다는 것이다.
+  //    input iterator의 대표적인 예인 (키보드에서 입력을 하나씩 받는) istream iterator을 상상해보면 이해하기 쉽다.
   template <typename _InputIterator>
   void _M_range_initialize(_InputIterator __first, _InputIterator __last, std::input_iterator_tag) {
-    for ( ; __first != __last; ++__first) // forward iterator가 아닐 경우 하나하나 할당해주어야 한다.
+    for ( ; __first != __last; ++__first)
       push_back(*__first);
   }
 
@@ -521,17 +527,18 @@ protected:
     size_type __n = std::distance(__first, __last);
     _M_start = _M_allocate(__n);
     _M_end_of_storage = _M_start + __n;
-    _M_finish = std::uninitialized_copy(__first, __last, _M_start);
+    _M_finish = std::uninitialized_copy(__first, __last, _M_start); // 스로우한거 받아줘야 할까?
   }
 
   // _M_range_insert() :
   // vector를 [__first, __last) 구간의 값과 동일하게 (값을 복사하여) 삽입한다.
+  // (insert()에서 사용된다.)
 
   // _M_range_insert1. input iterator는 여기로 들어온다.
   template <typename _InputIterator>
   void _M_range_insert(iterator __pos, _InputIterator __first, _InputIterator __last, std::input_iterator_tag)
   {
-    for ( ; __first != __last; ++__first) { // forward iterator가 아닐 경우 하나하나 넣어주어야 한다.
+    for ( ; __first != __last; ++__first) {
       __pos = insert(__pos, *__first); // insert1(단일 요소) 호출
       ++__pos;
     }
@@ -656,6 +663,7 @@ protected:
   }
 
   // _M_assign_aux() :
+  // assign()에서 사용된다.
 
   // _M_assign_aux1. input iterator는 여기로 들어온다.
   template <typename _InputIter>
