@@ -45,10 +45,14 @@ class reverse_iterator
     explicit reverse_iterator(iterator_type __x): current(__x) {}
     
     // CONSTRUCTOR3. copy
-    // 역반복자에서 역반복자를 생성한다. 생성된 객체는 __x와 동일하게 동작한다.
-    reverse_iterator(const reverse_iterator& __x): current(__x.current) { }
-
-    //reverse_iterator(const reverse_iterator<_Iterator>& __x): current(__x.base()) {}
+    //
+    // Q. 함수가 아닌 함수템플릿으로 복사생성자를 만든 이유.
+    // A. Allow iterator to const_iterator conversion.
+    //    즉, 들어오는 얘가 나랑 다른 타입의 reverse_iterator일 때도 지원한다.
+    //    예를 들어, 나 자신은 const int *를 담고 있는데, 들어오는 얘가 그냥 int *를 담고 있을 때. (반대의 경우에는 형변환이 안 되므로 컴파일에러가 발생할 것이다.)
+    //    그때는 __x의 protected 멤버변수에 접근할 수 없으니, base()를 사용하여 접근해야 한다.
+    template<typename _Iterator2>
+    reverse_iterator(const reverse_iterator<_Iterator2>& __x): current(__x.base()) {}
 
     // base iterator의 복사를 반환한다.
     iterator_type base() const { return current; }
@@ -170,8 +174,10 @@ class __normal_iterator
     explicit __normal_iterator(const _Iterator& __i) : _M_current(__i) { }
 
     // CONSTRUCTOR (COPY)
-    template<typename _Iter>
-    inline __normal_iterator(const __normal_iterator<_Iter, _Container>& __i) : _M_current(__i.base()) { }
+    // Allow iterator to const_iterator conversion
+    template<typename _Iterator2>
+    inline __normal_iterator(const __normal_iterator<_Iterator2, _Container>& __i) 
+    : _M_current(__i.base()) {}
 
     // 객체 내부에서 실제 쓰이고 있는 (int* 등의) 포인터를 const reference로 반환한다.
     const _Iterator& base() const { return _M_current; }

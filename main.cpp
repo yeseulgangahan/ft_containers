@@ -14,10 +14,11 @@
 
 int  main()
 {
-  ft::vector<int> v;
+  ft::vector<int> v(10, 42);
 
-  v.push_back(42);
-  std::cout << v.at(0) << std::endl;
+  ft::vector<int> v2(v);
+
+  std::cout << v2.size();
 }
 
 

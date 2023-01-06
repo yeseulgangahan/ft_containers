@@ -218,10 +218,10 @@ public:
 
   // max_size() :
   // vector가 저장할 수 있는 요소의 최대의 개수를 반환한다. 단, 그 크기에 도달하기 전에 어느 시점에서든지 할당이 불가능해질 수 있다.
-  // Q. 왜 std::numeric_limits<difference_type>::max()를 사용했나?
+  // Q. 왜 std::numeric_limits<size_type>::max()를 사용했나?
   // A. 만약 32-bit 시스템이라면, 이론적으로 4Gb == 2^32bits만큼 할당할 수 있다.
   //    이 수는 가능한 주소값의 개수로 구할 수 있는데, 주소값의 개수가 곧 할당할 수 있는 공간의 개수이기 때문이다.
-  size_type max_size() const { return std::numeric_limits<difference_type>::max() / sizeof(_Type); }
+  size_type max_size() const { return std::numeric_limits<size_type>::max() / sizeof(_Type); }
 
   // reserve() :
   // 동작순서: 새 메모리를 할당 → 원래 내용을 새 메모리에 복사 → 원래 메모리를 destroy, deallocate → 새로운 메모리를 start, finish, end_of_storage에 저장
@@ -305,7 +305,7 @@ public:
     if (__position + 1 != end()) // 끝 요소가 아니면
       std::copy(__position + 1, end(), __position); // 앞으로 한 칸 당긴다 [12344]
     --_M_finish; // [1234]
-    _M_destroy(_M_finish);
+    _M_destroy(end());
     return __position; // __position: 2를 가리키는 반복자
   }
 
@@ -346,7 +346,7 @@ public:
   // 마지막 요소를 제거destroy한다.
   void pop_back() {
     --_M_finish;
-    _M_destroy(_M_finish);
+    _M_destroy(end());
   }
 
   // resize() :
@@ -383,7 +383,7 @@ public:
   // __n개의 요소를 가진 vector를 생성한다. 각 요소는 __value의 복사본이다.
   explicit vector(
     size_type __n, // 초기 vector size
-    const _Type& __value, // vector를 채울 값
+    const _Type& __value = _Type(), // vector를 채울 값
     const allocator_type& __a = allocator_type()
   ) : _Base(__n, __a)
     { _M_finish = std::uninitialized_fill_n(_M_start, __n, __value); }
@@ -486,6 +486,8 @@ protected:
   // _M_FUNCTIONS
 
   // _M_destroy() :
+  // 포인터가 들어올 수도, 이터레이터가 들어올 수도. 포인터만 받을까? 할당기도 포인터만 받음
+
 
   // _M_destroy1. 범위
   template <typename _ForwardIterator>
@@ -496,7 +498,7 @@ protected:
 
   // _M_destroy2. 단일 요소
   template <typename _ForwardIterator>
-  void _M_destory(_ForwardIterator __position) {
+  void _M_destroy(_ForwardIterator __position) {
       get_allocator().destroy(__position.base());
   }
 
