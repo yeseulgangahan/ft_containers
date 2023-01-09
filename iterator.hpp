@@ -45,10 +45,13 @@ class reverse_iterator
     explicit reverse_iterator(iterator_type __x): current(__x) {}
     
     // CONSTRUCTOR3. copy
-    //
-    // Q. 함수가 아닌 함수템플릿으로 복사생성자를 만든 이유.
+    // Q. 함수템플릿이 있는데 함수도 만든 이유
+    // A. 컴파일러가 자동생성하는 복사생성자 대신 같은 타입 인자에 대한 복사생성자를 위해 선언했다.
+    reverse_iterator(const reverse_iterator& __x) : current(__x.current) { }
+
+    // Q. 함수템플릿으로 복사생성자를 만든 이유.
     // A. Allow iterator to const_iterator conversion.
-    //    즉, 들어오는 얘가 나랑 다른 타입의 reverse_iterator일 때도 지원한다.
+    //    즉, 들어오는 얘가 나랑 다른 타입의 reverse_iterator일 때도 지원하기 위해서 만든다.
     //    예를 들어, 나 자신은 const int *를 담고 있는데, 들어오는 얘가 그냥 int *를 담고 있을 때. (반대의 경우에는 형변환이 안 되므로 컴파일에러가 발생할 것이다.)
     //    그때는 __x의 protected 멤버변수에 접근할 수 없으니, base()를 사용하여 접근해야 한다.
     template<typename _Iterator2>
@@ -104,6 +107,14 @@ class reverse_iterator
     reference operator[](difference_type __n) const { return *(*this + __n); }  
 }; 
 
+// normal iterator가 const와 그냥 반복자의 비교연산을 지원해주는 것과 달리,
+// C++98의 reverse iterator는 타입이 완전히 같은 경우에 한해서만 비교연산을 지원하는 한계를 갖는다.
+// C++11에서 수정되었다.
+
+// EQUALITY/UNEQUALITY
+// : 같은지 비교한다. 두 반복자가 같은 시퀀스를 반복하고 있을 때 의미있다.
+// (정방향반복자 필수 연산자)
+
 template<typename _Iterator>
   inline bool 
   operator==(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
@@ -111,13 +122,16 @@ template<typename _Iterator>
 
 template<typename _Iterator>
   inline bool 
-  operator<(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
-  { return __y.base() < __x.base(); }
+  operator!=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
+  { return !(__x == __y); }
+  
+// INEQUALITY RELATIONAL
+// : 비교한다. (랜덤액세스반복자 필수 연산자)
 
 template<typename _Iterator>
   inline bool 
-  operator!=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
-  { return !(__x == __y); }
+  operator<(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
+  { return __y.base() < __x.base(); }
 
 template<typename _Iterator>
   inline bool 

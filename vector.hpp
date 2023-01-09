@@ -16,7 +16,8 @@
 #include <iterator>
   // std::distance(): first부터 last까지 몇 칸인지 반환한다.
 
-  // std::advance(반복자, n): 반복자를 n만큼 이동한다.
+  // std::advance(반복자, n): 
+  //   반복자를 n만큼 이동한다. 임의접근반복자를 제외하고는 += 연산을 지원하지 않으므로 필요하다.
 
 #include <limits>
   // std::numeric_limits
@@ -118,7 +119,7 @@ public:
   // Member types
 
   typedef _Type  value_type; // 첫번째 템플릿 인수
-  typedef _AllocatorType  allocator_type; // 두번째 템플릿 인수
+  typedef typename _Base::allocator_type  allocator_type; // 두번째 템플릿 인수
 
   // 부호없는 정수 타입. (size_t는 unsigned long의 typedef다.)
   // defference_type의 부호없는 값을 나타낼 수 있다.
@@ -132,14 +133,15 @@ public:
   typedef value_type& reference;
   typedef const value_type&  const_reference;
 
-  typedef typename  allocator_type::pointer pointer;
-  typedef typename  allocator_type::const_pointer const_pointer;
+  // default allocator에 한하여 각각 value_type *, const value_type *
+  typedef typename allocator_type::pointer pointer;
+  typedef typename allocator_type::const_pointer const_pointer;
 
-   typedef __normal_iterator<pointer, vector_type>  iterator; // 임의접근반복자. const iterator로 변형이 가능하다.
-   typedef __normal_iterator<const_pointer, vector_type>  const_iterator; //임의접근반복자.
+  typedef __normal_iterator<pointer, vector_type>  iterator; // 임의접근반복자. const iterator로 변형이 가능하다.
+  typedef __normal_iterator<const_pointer, vector_type>  const_iterator; //임의접근반복자.
 
-   typedef std::reverse_iterator<iterator>  reverse_iterator;
-   typedef std::reverse_iterator<const_iterator>  const_reverse_iterator;
+  typedef reverse_iterator<const_iterator>  const_reverse_iterator;
+  typedef reverse_iterator<iterator>  reverse_iterator;
 
 protected:
   using _Base::_M_allocate;
@@ -155,8 +157,17 @@ public:
   // 벡터에서 위치 __n에 있는 요소에 대한 참조를 반환한다.
   // 자동적으로 __n이 범위 내에 있는지 확인하고, 아닐 경우 out_of_range를 던진다. 범위 확인을 하지 않는 operator[]와 대조된다.
   // Exception safety: strong guarantee.
-  reference at(size_type __n) { _M_range_check(__n); return (*this)[__n]; }
-  const_reference at(size_type __n) const { _M_range_check(__n); return (*this)[__n]; } // 벡터 객체가 const-qualified인 경우
+
+  reference at(size_type __n) { 
+    _M_range_check(__n); 
+    return (*this)[__n]; 
+  }
+  
+  // 벡터 객체가 const-qualified인 경우
+  const_reference at(size_type __n) const { 
+    _M_range_check(__n); 
+    return (*this)[__n]; 
+  }
 
   // operator[] :
   // at과 동일하되, 범위 확인을 하지 않는다.
@@ -505,7 +516,7 @@ protected:
   // _M_range_check() :
     void _M_range_check(size_type __n) const {
       if (__n >= this->size())
-        std::out_of_range("vector");
+        throw std::out_of_range("vector");
     }
 
   // _M_range_initialize() :
@@ -651,7 +662,7 @@ protected:
         }
         catch(...) // (insert()는 재할당이 필요한 경우에 한하여 strong gurantee)
         {
-      _M_destroy(__new_start,__new_finish);
+      _M_destroy(__new_start, __new_finish);
       _M_deallocate(__new_start.base(),__len);
       throw; // (발생한 예외를 다시 던진다.)
         }
