@@ -6,18 +6,15 @@ NAME			= ft_container_tester
 SOURCES_FOLDER	= ./testers/
 
 SOURCES			=	main.cpp \
-#tester.cpp \
-#tester_map.cpp \
-#tester_list.cpp \
-#tester_deque.cpp \
-#tester_vector.cpp \
-#tester_queue.cpp \
-#tester_stack.cpp
+					tester.cpp \
+					tester_vector.cpp \
+					tester_stack.cpp \
+					tester_map.cpp \
 					
 # ==============================================================================
 
 # INCLUDES =====================================================================
-#INCLUDE 		= ./testers/tester.hpp
+INCLUDE 		= ./testers/tester.hpp
 # ==============================================================================
 
 # FLAGS ========================================================================

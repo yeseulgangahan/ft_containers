@@ -1,6 +1,9 @@
 #ifndef ALGORITHM_HPP
 #define ALGORITHM_HPP
 
+namespace ft
+{
+
 // equal() :
 // 두 요소를 비교한다.
 
@@ -64,6 +67,27 @@ bool lexicographical_compare(InputIterator1 first1, InputIterator1 last1, InputI
     ++first1; ++first2;
   }
   return (first2 != last2); // 범위2가 아직 남았다면 범위1이 더 짧으므로 true 반환
+}
+
+template <typename T>
+void swap(T& a, T& b)
+{
+  T c(a);
+  a = b;
+  b = c;
+}
+
+template<class InputIterator, class OutputIterator>
+OutputIterator copy (InputIterator first, InputIterator last, OutputIterator result)
+{
+   typedef typename iterator_traits<InputIterator>::difference_type _Distance;
+    for(_Distance __n = last - first; __n > 0; --__n) {
+    *result = *first;
+    ++result; ++first;
+  }
+  return result;
+}
+
 }
 
 #endif // ALGORITHM_HPP

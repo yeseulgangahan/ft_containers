@@ -31,7 +31,7 @@
 
   // std::max(a, b): a와 b 중 큰 것을 반환한다.
 
-  // std::copy(source의 시작, source의 끝, dest의 시작): 
+  // ft::copy(source의 시작, source의 끝, dest의 시작): 
   //    source의 구간을 dest의 시작지점부터 복사한다.
   //    범위의 길이가 0일 경우 3번째 인자를, 아니면 복사된 구간의 마지막을 반환한다.
 
@@ -317,7 +317,7 @@ public:
   iterator erase(iterator __position) {
     // 예) [1A234], erase A
     if (__position + 1 != end()) // 끝 요소가 아니면
-      std::copy(__position + 1, end(), __position); // 앞으로 한 칸 당긴다 [12344]
+      ft::copy(__position + 1, end(), __position); // 앞으로 한 칸 당긴다 [12344]
     --_M_finish; // [1234]
     _M_destroy(end());
     return __position; // __position: 2를 가리키는 반복자
@@ -326,7 +326,7 @@ public:
   // erase2. 범위
   iterator erase(iterator __first, iterator __last) {
     // 예) [1AB23], erase AB
-    iterator __i(std::copy(__last, end(), __first)); // [12323]: 지울 범위의 뒷부분 데이터를 앞으로 옮긴다.
+    iterator __i(ft::copy(__last, end(), __first)); // [12323]: 지울 범위의 뒷부분 데이터를 앞으로 옮긴다.
     _M_destroy(__i, end()); // [12300]: 복사된 구간 다음부터 destroy
     _M_finish = _M_finish - (__last - __first); // [123]: 지운 구간(__last - __first)만큼 줄인다.
     return __first;
@@ -377,9 +377,9 @@ public:
   // 인자로 들어온 (타입이 같은) 또다른 vector와 가지고 있던 메모리를 바꾸어 가진다.
   // 비멤버함수 swap이 vector에 대해 사용될 경우 이 swap을 쓰도록 오버로딩되어 있다.
   void swap(vector<_Type, _AllocatorType>& __x) {
-    std::swap(_M_start, __x._M_start);
-    std::swap(_M_finish, __x._M_finish);
-    std::swap(_M_end_of_storage, __x._M_end_of_storage);
+    ft::swap(_M_start, __x._M_start);
+    ft::swap(_M_finish, __x._M_finish);
+    ft::swap(_M_end_of_storage, __x._M_end_of_storage);
   }
 
 public:
@@ -444,12 +444,12 @@ public:
     }
 
     else if (size() >= __xlen) { // case2: 덮어쓰고 남는 뒷부분을 destroy해야 하는 경우
-      iterator __i(std::copy(__x.begin(), __x.end(), begin()));
+      iterator __i(ft::copy(__x.begin(), __x.end(), begin()));
       _M_destroy(__i, end());
     }
     
     else { // case3: size가 작아서 덮어쓰고 일부 생성해야 하는 경우
-      std::copy(__x.begin(), __x.begin() + size(), _M_start); // 복사(만)
+      ft::copy(__x.begin(), __x.begin() + size(), _M_start); // 복사(만)
       std::uninitialized_copy(__x.begin() + size(), __x.end(), _M_finish); // 생성
     }
 
@@ -579,7 +579,7 @@ protected:
           std::uninitialized_copy(_M_finish - __n, _M_finish, _M_finish); // [1234545] : 45를 **생성**
           _M_finish += __n;
           std::copy_backward(__position, __old_finish - __n, __old_finish); // [1232345] : 23을 복사
-          copy(__first, __last, __position); // [1AB2345] : AB를 복사
+          ft::copy(__first, __last, __position); // [1AB2345] : AB를 복사
         }
         
         else { // case1-2. 새로 넣는 요소가 기존에 생성되어 있는 요소들을 넘어선 위치에 들어가야 할 때
@@ -590,7 +590,7 @@ protected:
           _M_finish += __n - __elems_after;
           std::uninitialized_copy(__position, __old_finish, _M_finish); // [123CD23]: 23을 **생성**
           _M_finish += __elems_after;
-          copy(__first, __mid, __position); // [1ABCD23]: AB를 복사
+          ft::copy(__first, __mid, __position); // [1ABCD23]: AB를 복사
         }
       }
       else { // case2: 빈 공간이 부족할 때 (재할당이 필요할 때)
@@ -610,9 +610,8 @@ protected:
         {
       _M_destroy(__new_start,__new_finish);
       _M_deallocate(__new_start.base(), __len);
-      throw; // (발생한 예외를 다시 던진다.)
+      throw; // (발생한 예외를 다시 던진다.) 
         }
-        
         _M_destroy(begin(), end());
         _M_deallocate(_M_start, _M_end_of_storage - _M_start);
         _M_start = __new_start.base();
@@ -653,9 +652,10 @@ protected:
 
       else { // case2: 넣을 공간이 부족해 재할당이 필요한 경우
         const size_type __old_size = size();
-        const size_type __len = __old_size +
-           std::max(__old_size, __n); // __old_size: 메모리할당 정책에 따라 기존의 2배 / __n: 그보다 더 필요할 경우 __n만큼
-     
+        const size_type __len = capacity() +
+           std::max(capacity(), __n); // 나의 메모리 할당 정책: 기존 capacity의 2배, 그보다 더 필요할 경우 __n만큼
+        //const size_type __len = __old_size +
+        //   std::max(__old_size, __n); // C++98의 구현에서 메모리할당 정책은 기존 size의 2배이다.
         iterator __new_start(_M_allocate(__len));
         iterator __new_finish(__new_start);
         
@@ -711,7 +711,7 @@ protected:
     }
 
     else if (size() >= __len) { // case2: 덮어쓰고 남는 뒷부분을 destroy해야 하는 경우
-      iterator __new_finish(std::copy(__first, __last, _M_start));
+      iterator __new_finish(ft::copy(__first, __last, _M_start));
       _M_destroy(__new_finish, end());
       _M_finish = __new_finish.base();
     }
@@ -719,7 +719,7 @@ protected:
     else { // case3: size가 작아서 덮어쓰고 일부 생성이 필요한 경우
       _ForwardIter __mid = __first;
       std::advance(__mid, size());
-      std::copy(__first, __mid, _M_start); // 복사(만)
+      ft::copy(__first, __mid, _M_start); // 복사(만)
       _M_finish = std::uninitialized_copy(__mid, __last, _M_finish); // 생성
     }
   }
@@ -833,14 +833,14 @@ protected:
   template <typename _Type, typename _AllocatorType>
   inline bool operator==(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return __x.size() == __y.size() &&
-          std::equal(__x.begin(), __x.end(), __y.begin());
+          ft::equal(__x.begin(), __x.end(), __y.begin());
   }
 
   // lexicographical_compare()를 사용하는 것과 동일하게 동작한다.
   // 즉 operator<를 사용하여 a<b, b<a 모두 확인하고, 처음 비교가 가능한 곳에서 멈춘다.
   template <typename _Type, typename _AllocatorType>
   inline bool operator<(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
-    return std::lexicographical_compare(__x.begin(), __x.end(), __y.begin(), __y.end());
+    return ft::lexicographical_compare(__x.begin(), __x.end(), __y.begin(), __y.end());
   }
 
   template <typename _Type, typename _AllocatorType>
