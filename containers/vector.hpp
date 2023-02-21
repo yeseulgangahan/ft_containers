@@ -651,10 +651,9 @@ protected:
       }
 
       else { // case2: 넣을 공간이 부족해 재할당이 필요한 경우
-        const size_type __old_capacity = capacity();
-        const size_type __len = __old_capacity +
-           std::max(__old_capacity, __n); // 나의 메모리 할당 정책: 기존 capacity의 2배, 그보다 더 필요할 경우 __n만큼
-        //const size_type __old_size = size();
+        const size_type __old_size = size();
+        const size_type __len = capacity() +
+           std::max(capacity(), __n); // 나의 메모리 할당 정책: 기존 capacity의 2배, 그보다 더 필요할 경우 __n만큼
         //const size_type __len = __old_size +
         //   std::max(__old_size, __n); // C++98의 구현에서 메모리할당 정책은 기존 size의 2배이다.
         iterator __new_start(_M_allocate(__len));
@@ -832,7 +831,7 @@ protected:
 // (1) size를 비교한 뒤 같으면 (2) equal()로 요소들을 비교하는 것과 동일하게 동작한다.
 // 다른 요소가 발견된 곳에서 멈춘다.
   template <typename _Type, typename _AllocatorType>
-  bool operator==(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator==(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return __x.size() == __y.size() &&
           ft::equal(__x.begin(), __x.end(), __y.begin());
   }
@@ -840,27 +839,27 @@ protected:
   // lexicographical_compare()를 사용하는 것과 동일하게 동작한다.
   // 즉 operator<를 사용하여 a<b, b<a 모두 확인하고, 처음 비교가 가능한 곳에서 멈춘다.
   template <typename _Type, typename _AllocatorType>
-  bool operator<(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator<(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return ft::lexicographical_compare(__x.begin(), __x.end(), __y.begin(), __y.end());
   }
 
   template <typename _Type, typename _AllocatorType>
-  bool operator!=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator!=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return !(__x == __y);
   }
 
   template <typename _Type, typename _AllocatorType>
-  bool operator>(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator>(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return __y < __x;
   }
 
   template <typename _Type, typename _AllocatorType>
-  bool operator<=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator<=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return !(__y < __x);
   }
 
   template <typename _Type, typename _AllocatorType>
-  bool operator>=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
+  inline bool operator>=(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return !(__x < __y);
   }
 
@@ -868,7 +867,7 @@ protected:
   // 목적(1) swap을 오버로드한다.
   // 목적(2) vector의 멤버함수 swap을 쓰도록 하여 swap의 동작을 vector에 최적화한다.
   template <typename _Type, typename _AllocatorType>
-  void swap(vector<_Type, _AllocatorType>& __x, vector<_Type, _AllocatorType>& __y)
+  inline void swap(vector<_Type, _AllocatorType>& __x, vector<_Type, _AllocatorType>& __y)
   {
     __x.swap(__y);
   }
