@@ -1,7 +1,5 @@
 #ifndef PAIR_HPP
 #define PAIR_HPP
-#include <map>
-
 
 namespace ft
 {

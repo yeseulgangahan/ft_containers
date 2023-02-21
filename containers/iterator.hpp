@@ -119,38 +119,38 @@ class reverse_iterator
 // (정방향반복자 필수 연산자)
 
 template<typename _Iterator>
-  inline bool operator==(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
+  bool operator==(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return __x.base() == __y.base(); }
 
 template<typename _Iterator>
-  inline bool operator!=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
+  bool operator!=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return !(__x == __y); }
   
 // INEQUALITY RELATIONAL
 // : 비교한다. (랜덤액세스반복자 필수 연산자)
 
 template<typename _Iterator>
-  inline bool operator<(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
+  bool operator<(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return __y.base() < __x.base(); }
 
 template<typename _Iterator>
-  inline bool operator>(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
+  bool operator>(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return __y < __x; }
 
 template<typename _Iterator>
-  inline bool operator<=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
+  bool operator<=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return !(__y < __x); }
 
 template<typename _Iterator>
-  inline bool operator>=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
+  bool operator>=(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return !(__x < __y); }
 
 template<typename _Iterator>
-  inline typename reverse_iterator<_Iterator>::difference_type operator-(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
+  typename reverse_iterator<_Iterator>::difference_type operator-(const reverse_iterator<_Iterator>& __x, const reverse_iterator<_Iterator>& __y) 
   { return __y.base() - __x.base(); }
 
 template<typename _Iterator>
-  inline reverse_iterator<_Iterator> operator+(typename reverse_iterator<_Iterator>::difference_type __n, const reverse_iterator<_Iterator>& __x) 
+  reverse_iterator<_Iterator> operator+(typename reverse_iterator<_Iterator>::difference_type __n, const reverse_iterator<_Iterator>& __x) 
   { return reverse_iterator<_Iterator>(__x.base() - __n); }
 
 
@@ -185,7 +185,7 @@ class __normal_iterator
     // CONSTRUCTOR (COPY)
     // Allow iterator to const_iterator conversion
     template<typename _Iterator2>
-    inline __normal_iterator(const __normal_iterator<_Iterator2, _Container>& __i) 
+    __normal_iterator(const __normal_iterator<_Iterator2, _Container>& __i) 
     : _M_current(__i.base()) {}
 
     // 객체 내부에서 실제 쓰이고 있는 (int* 등의) 포인터를 const reference로 반환한다.
@@ -242,36 +242,36 @@ class __normal_iterator
 // (정방향반복자 필수 연산자)
 
 template<typename _IteratorL, typename _IteratorR, typename _Container>
-inline bool operator==(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
+bool operator==(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
 { return __lhs.base() == __rhs.base(); }
 
 template<typename _IteratorL, typename _IteratorR, typename _Container>
-inline bool operator!=(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
+bool operator!=(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
 { return !(__lhs == __rhs); }
 
 // INEQUALITY RELATIONAL
 // : 비교한다. (랜덤액세스반복자 필수 연산자)
 
 template<typename _IteratorL, typename _IteratorR, typename _Container>
-inline bool operator<(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
+bool operator<(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
 { return __lhs.base() < __rhs.base(); }
 
 template<typename _IteratorL, typename _IteratorR, typename _Container>
-inline bool operator>(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
+bool operator>(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
 { return __rhs < __lhs; }
 
 template<typename _IteratorL, typename _IteratorR, typename _Container>
-inline bool operator<=(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
+bool operator<=(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
 { return !(__rhs < __lhs); }
 
 template<typename _IteratorL, typename _IteratorR, typename _Container>
-inline bool operator>=(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
+bool operator>=(const __normal_iterator<_IteratorL, _Container>& __lhs, const __normal_iterator<_IteratorR, _Container>& __rhs)
 { return !(__lhs < __rhs); }
 
 // ARITHMETIC
 // : 정수타입 + 반복자 (멤버함수에 operator+가 있지만, 교환법칙을 지원하기 위해서 비멤버함수로도 오버로딩을 해준다.)
 template<typename _Iterator, typename _Container>
-inline __normal_iterator<_Iterator, _Container> operator+(typename __normal_iterator<_Iterator, _Container>::difference_type __n, const __normal_iterator<_Iterator, _Container>& __i)
+__normal_iterator<_Iterator, _Container> operator+(typename __normal_iterator<_Iterator, _Container>::difference_type __n, const __normal_iterator<_Iterator, _Container>& __i)
 { return __normal_iterator<_Iterator, _Container>(__i.base() + __n); }
 
 } // namespace ft

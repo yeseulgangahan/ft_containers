@@ -5,11 +5,7 @@ NAME			= ft_container_tester
 # SRCS =========================================================================
 SOURCES_FOLDER	= ./testers/
 
-SOURCES			=	main.cpp \
-					tester.cpp \
-					tester_vector.cpp \
-					tester_stack.cpp \
-					tester_map.cpp \
+SOURCES			=	main.cpp
 					
 # ==============================================================================
 
@@ -43,18 +39,6 @@ all: $(NAME)
 clean:
 	@echo "Cleaning: $(OBJECTS_FOLDER)"
 	@rm -rf $(OBJECTS_FOLDER)
-	@echo "Cleaning: ./tester/vectors_output"
-	@rm -rf ./tester/vectors_output
-	@echo "Cleaning: ./tester/lists_output"
-	@rm -rf ./tester/lists_output
-	@echo "Cleaning: ./tester/stacks_output"
-	@rm -rf ./tester/stacks_output
-	@echo "Cleaning: ./tester/queues_output"
-	@rm -rf ./tester/queues_output
-	@echo "Cleaning: ./tester/deques_output"
-	@rm -rf ./tester/deques_output
-	@echo "Cleaning: ./tester/maps_output"
-	@rm -rf ./tester/maps_output
 
 fclean: clean
 	@echo "Cleaning: $(NAME)"
