@@ -32,7 +32,7 @@ struct integral_constant {
   const static _Type value = v; // struct template의 static 변수는 컴파일타임에 초기화된다.
   typedef _Type value_type;
   typedef integral_constant<_Type, v> type;
-  inline operator _Type() { return v; } // inline함수이므로 컴파일타임에 확정된다.
+  operator _Type() { return v; } // inline함수이므로 컴파일타임에 확정된다.
 };
 
 // true, false를 나타내기 위한 integral_constant의 인스턴스화에 대한 typedef

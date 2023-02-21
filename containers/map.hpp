@@ -159,8 +159,6 @@ public:
 
   // map operations:
   
-  // find() :
-  // __x가 key인 요소가 있으면 그 요소의 반복자를 반환하고, 없으면 end()를 반환한다.
   iterator find(const key_type& __x) { return _M_tree.find(__x); }
   const_iterator find(const key_type& __x) const { return _M_tree.find(__x); }
 
@@ -171,16 +169,11 @@ public:
     return _M_tree.find(__x) == _M_tree.end() ? 0 : 1; // 찾았으면 1, 아니면 0
   }
 
-  // lower_bound() :
-  // 하한 반복자를 반환한다. 앞선 것으로 간주되지 않는(=동일하거나 뒤인) 요소 중 첫 번째 요소.
-  // 즉 [1245]에서 3을 찾을 경우 4, 2를 찾을 경우 2를 가리킨다.
   iterator lower_bound(const key_type& __x) {return _M_tree.lower_bound(__x); }
   const_iterator lower_bound(const key_type& __x) const {
     return _M_tree.lower_bound(__x); 
   }
-  // upper_bound() :
-  // 상한 반복자를 반환한다. 다음에 오는 것으로 간주되는(=뒤인) 요소 중 첫 번째 요소.
-  // 즉 [1245]에서 3을 찾을 경우 4, 2를 찾을 경우 4를 가리킨다.
+
   iterator upper_bound(const key_type& __x) {return _M_tree.upper_bound(__x); }
   const_iterator upper_bound(const key_type& __x) const {
     return _M_tree.upper_bound(__x); 
@@ -190,9 +183,6 @@ public:
   // [1245]에서 1부터 4까지의 요소를 포함하는 범위는 [lower_bound(1), upper_bound(4))로 표현할 수 있다.
   // (upper_bound(4)는 5를 가리키고 있으므로)
   
-  // equal_range() :
-  // __x가 키인 모든 요소를 포함하는 범위를 반환환다.
-  // map은 키가 고유하므로 -> 반환되는 범위에는 요소가 1이거나 0개가 포함된다.
   pair<iterator,iterator> equal_range(const key_type& __x) {
     return _M_tree.equal_range(__x);
   }
@@ -209,43 +199,43 @@ public:
 };
 
 template <class _Key, class _MappedType, class _KeyCompare, class _Alloc>
-inline bool operator==(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
+bool operator==(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
                        const map<_Key,_MappedType,_KeyCompare,_Alloc>& __y) {
   return __x._M_tree == __y._M_tree;
 }
 
 template <class _Key, class _MappedType, class _KeyCompare, class _Alloc>
-inline bool operator<(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
+bool operator<(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
                       const map<_Key,_MappedType,_KeyCompare,_Alloc>& __y) {
   return __x._M_tree < __y._M_tree;
 }
 
 template <class _Key, class _MappedType, class _KeyCompare, class _Alloc>
-inline bool operator!=(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
+bool operator!=(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
                        const map<_Key,_MappedType,_KeyCompare,_Alloc>& __y) {
   return !(__x == __y);
 }
 
 template <class _Key, class _MappedType, class _KeyCompare, class _Alloc>
-inline bool operator>(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
+bool operator>(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
                       const map<_Key,_MappedType,_KeyCompare,_Alloc>& __y) {
   return __y < __x;
 }
 
 template <class _Key, class _MappedType, class _KeyCompare, class _Alloc>
-inline bool operator<=(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
+bool operator<=(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
                        const map<_Key,_MappedType,_KeyCompare,_Alloc>& __y) {
   return !(__y < __x);
 }
 
 template <class _Key, class _MappedType, class _KeyCompare, class _Alloc>
-inline bool operator>=(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
+bool operator>=(const map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
                        const map<_Key,_MappedType,_KeyCompare,_Alloc>& __y) {
   return !(__x < __y);
 }
 
 template <class _Key, class _MappedType, class _KeyCompare, class _Alloc>
-inline void swap(map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
+void swap(map<_Key,_MappedType,_KeyCompare,_Alloc>& __x, 
                  map<_Key,_MappedType,_KeyCompare,_Alloc>& __y) {
   __x.swap(__y);
 }
