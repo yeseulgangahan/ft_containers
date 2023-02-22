@@ -1,7 +1,5 @@
 #ifndef PAIR_HPP
 #define PAIR_HPP
-#include <map>
-
 
 namespace ft
 {
@@ -19,7 +17,7 @@ template <typename _T1, typename _T2>
   // default constructor
   pair() : first(_T1()), second(_T2()) {}
 
-  //// copy constructor
+  // copy constructor
   template <typename _U1, typename _U2>
   pair(const pair<_U1, _U2>& __p) : first(__p.first), second(__p.second) {}
 

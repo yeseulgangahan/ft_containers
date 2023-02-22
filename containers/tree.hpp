@@ -3,6 +3,7 @@
 
 #include <exception>
   // out_of_range
+
 #include <cstddef>
   // ptrdiff_t
 
@@ -14,7 +15,6 @@
 
 #include "pair.hpp"
   // pair
-  // make_pair
 
 #include "iterator.hpp"
 
@@ -105,6 +105,7 @@ struct _Rb_tree_base_iterator
   void _M_decrement()
   {
     // _M_node가 header일 때
+    // 즉, end()에서 ++연산을 하는 것은 불가하지만(undefined), --연산을 하는 것은 가능하다.
     if (_M_node->_M_color == _S_rb_tree_red && // root가 아닐 때
         _M_node->_M_parent->_M_parent == _M_node) // _M_node가 root일 때 혹은 header일 때
       _M_node = _M_node->_M_right;
@@ -146,9 +147,9 @@ struct _Rb_tree_iterator : public _Rb_tree_base_iterator
   reference operator*() const { return _Link_type(_M_node)->_M_value_field; }
   pointer operator->() const { return &(operator*()); }
 
-  // 전위
+  // 전위 (++i)
   _Self& operator++() { _M_increment(); return *this; }
-  // 후위
+  // 후위 (i++)
   _Self operator++(int) {
     _Self __tmp = *this;
     _M_increment();
@@ -269,7 +270,7 @@ void _Rb_tree_rebalance_for_insert(_Rb_tree_node_base* __x, _Rb_tree_node_base*&
     if (__x->_M_parent == __x->_M_parent->_M_parent->_M_left) {
       _Rb_tree_node_base* __y = __x->_M_parent->_M_parent->_M_right;
 
-      // 1-1. 삼촌이 red -> recoloring
+      // 1-1. case1: 삼촌이 red -> recoloring
       if (__y && __y->_M_color == _S_rb_tree_red) {
         __x->_M_parent->_M_color = _S_rb_tree_black;
         __y->_M_color = _S_rb_tree_black;
@@ -292,7 +293,7 @@ void _Rb_tree_rebalance_for_insert(_Rb_tree_node_base* __x, _Rb_tree_node_base*&
     // 2. 나는 오른쪽, 삼촌은 왼쪽
     else {
       _Rb_tree_node_base* __y = __x->_M_parent->_M_parent->_M_left;
-      // 2-1. 삼촌이 red -> recoloring
+      // 2-1. case1: 삼촌이 red -> recoloring
       if (__y && __y->_M_color == _S_rb_tree_red) {
         __x->_M_parent->_M_color = _S_rb_tree_black;
         __y->_M_color = _S_rb_tree_black;
@@ -322,7 +323,7 @@ _Rb_tree_rebalance_for_erase(_Rb_tree_node_base* __innode,// 사용자가 erase�
                              _Rb_tree_node_base*& __leftmost,
                              _Rb_tree_node_base*& __rightmost)
 {
-  _Rb_tree_node_base* __target = __innode; // 지울 노드
+  _Rb_tree_node_base* __target = __innode; // target: 지울 노드
   _Rb_tree_node_base* __x = 0;
   _Rb_tree_node_base* __x_parent = 0;
 
@@ -342,7 +343,7 @@ _Rb_tree_rebalance_for_erase(_Rb_tree_node_base* __innode,// 사용자가 erase�
         __target = __target->_M_left;
       __x = __target->_M_right;
     }
-  // 2-1. target이 지울 노드가 아닌 successor를 의미할 때
+  // 2-1. target이 지울 노드가 아닌 successor를 가리키고 있을 때
   if (__target != __innode) {
     // 2-1-1. __innode 이하의 서브트리를 __innode 없이 정렬한다.
     // (1). successor(target)의 왼쪽에 삭제될 노드의 왼쪽을 연결해준다.
@@ -440,7 +441,7 @@ _Rb_tree_rebalance_for_erase(_Rb_tree_node_base* __innode,// 사용자가 erase�
           __x_parent->_M_color = _S_rb_tree_black;
           if (__sister->_M_right) __sister->_M_right->_M_color = _S_rb_tree_black;
           _Rb_tree_rotate_left(__x_parent, __root);
-          break;
+          break;// (case3, case4는 거슬러 올라가서 확인할 필요 없이 종료된다.)
         }
       } else { 
         // (오른쪽 왼쪽이 바뀌어 반복되는 코드)       
@@ -722,7 +723,7 @@ public:
   }      
 
 public:
-                                // set operations:
+                                // map operations:
   iterator find(const key_type& __x);
   const_iterator find(const key_type& __x) const;
   size_type count(const key_type& __x) const;

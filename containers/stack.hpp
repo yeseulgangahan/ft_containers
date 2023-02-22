@@ -6,7 +6,7 @@
 namespace ft
 {
 
-// (전방선언 forward declaration) : friend 키워드를 위해 전방참조하는 operator==, operator<를 위해, 전방선언을 해주었다.
+// (3. 전방선언 forward declaration) : stack안에서 friend로 선언된 두 함수가 무엇인지 미리 알려주었고, 그 함수에서 사용된 stack은 무엇인지도 미리 알려주었다.
 
 template <typename _ValueType, typename _ContainerType = vector<_ValueType> >
 class stack;
@@ -28,7 +28,7 @@ class stack
 //LIFO에서 작동하도록 설계되었다: 후입선출. 요소가 컨테이너의 한쪽 끝에서만 삽입 및 추출된다.
 //요소는 back에서 push/pop된다.
 
-// (전방참조 forward reference): 뒤에서 선언된 두 함수를 friend함수로 선언하기 위해 전방참조하므로, stack class 전에 전방선언을 해주었다.
+// (2. 전방참조 forward reference): 뒤에서 선언된 두 함수를 friend함수로 선언한다. '나는 operator++, operator<를 나의 친구로 인정해'
 
   template <typename _ValueType1, typename _ContainerType1>
   friend bool operator== (const stack<_ValueType1, _ContainerType1>&, const stack<_ValueType1, _ContainerType1>&);
@@ -72,7 +72,7 @@ public:
 // __x, __y 사이의 적절한 비교작업을 수행한다.
 // underlying container 개체에서 동일한 연산자를 호출한다.
 
-// 클래스 멤버함수로는 적합하지 않으나, 클래스의 private에 선언된 container 변수에 접근해야 하므로 stack에 friend함수로 선언해두었다.
+// 1. 클래스 멤버함수로는 적합하지 않으나, 클래스의 private에 선언된 container 변수에 접근해야 하므로 stack에 friend함수로 선언해두었다.
 
 template <typename _ValueType, typename _ContainerType>
 bool operator==(const stack<_ValueType,_ContainerType>& __x, const stack<_ValueType,_ContainerType>& __y)

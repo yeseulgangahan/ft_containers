@@ -1,9 +1,6 @@
 #ifndef ITERATOR_BASE_TYPES_HPP
 #define ITERATOR_BASE_TYPES_HPP
 
-// This file contains all of the general iterator-related utility
-// types, such as iterator_traits and struct iterator.
-
 #include <iterator>
 
 #include <cstddef>
@@ -12,7 +9,7 @@
 namespace ft
 {
   // base of all iterator
-  // : implement an iterator by inheriting from this.
+  // : 이 struct을 상속받아 반복자를 구현하면 된다.
 
   template<typename _Category, typename _Type, typename _Distance = std::ptrdiff_t, typename _Pointer = _Type*, typename _Reference = _Type&>
     struct iterator {
@@ -24,9 +21,8 @@ namespace ft
     };
 
   // iterator traits
-  // :  Traits class defining properties of iterators.
-  //    Standard algorithms determine (1) certain *properties* of the iterators passed to them and (2) the *range* they represent
-  //    by using the members of the corresponding iterator_traits instantiation.
+  // :  반복자의 속성을 정의하는 class.
+  //    표준알고리즘은, 이 iterator_traits의 인스턴스의 멤버를 이용해서, 전달받은 반복자의 속성을 확인하고, 범위를 확인한다.
 
   // generic definition
   template<typename _Iterator>
@@ -52,10 +48,10 @@ namespace ft
   template<typename _Type>
     struct iterator_traits<const _Type*> {
       typedef std::random_access_iterator_tag    iterator_category;
-      typedef _Type                         value_type;
-      typedef std::ptrdiff_t                difference_type;
-      typedef const _Type*                  pointer;
-      typedef const _Type&                  reference;
+      typedef _Type                              value_type;
+      typedef std::ptrdiff_t                     difference_type;
+      typedef const _Type*                       pointer;
+      typedef const _Type&                       reference;
     };
 } // namespace ft
 

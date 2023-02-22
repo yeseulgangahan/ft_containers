@@ -11,7 +11,7 @@ namespace ft
 // 요소들을 비교하고, 다른 곳에서 멈춘다.
 template <typename InputIterator1, typename InputIterator2>
 bool equal(InputIterator1 first1, InputIterator1 last1, InputIterator2 first2) {
-  while (first1!=last1) {
+  while (first1 != last1) {
     if (!(*first1 == *first2))
       return false;
     ++first1; ++first2;
@@ -22,10 +22,11 @@ bool equal(InputIterator1 first1, InputIterator1 last1, InputIterator2 first2) {
 // equal2. custom (pred 사용)
 // 4번째 인자로 들어온 pred를 사용하여 요소를 비교하고, 다른 곳에서 멈춘다.
 // pred의 조건: 함수객체 혹은 함수포인터로, bool로 변환할 수 있는 값을 반환하고 2개의 요소를 인자로 받는다. 인자를 변형하지 않는다.
+//           (BinaryPredicate: 2가지(bool)로 속성을 나타낸다는 의미.)  
 template <typename InputIterator1, typename InputIterator2, typename BinaryPredicate>
 bool equal(InputIterator1 first1, InputIterator1 last1, InputIterator2 first2, BinaryPredicate pred) {
-  while (first1!=last1) {
-    if (!pred(*first1,*first2))
+  while (first1 != last1) {
+    if (!pred(*first1, *first2))
       return false;
     ++first1; ++first2;
   }
@@ -70,16 +71,14 @@ bool lexicographical_compare(InputIterator1 first1, InputIterator1 last1, InputI
 }
 
 template <typename T>
-void swap(T& a, T& b)
-{
-  T c(a);
+void swap(T& a, T& b) {
+  T temp(a);
   a = b;
-  b = c;
+  b = temp;
 }
 
-template<class InputIterator, class OutputIterator>
-OutputIterator copy (InputIterator first, InputIterator last, OutputIterator result)
-{
+template<typename InputIterator, typename OutputIterator>
+OutputIterator copy(InputIterator first, InputIterator last, OutputIterator result) {
    typedef typename iterator_traits<InputIterator>::difference_type _Distance;
     for(_Distance __n = last - first; __n > 0; --__n) {
     *result = *first;

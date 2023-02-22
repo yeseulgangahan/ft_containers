@@ -12,6 +12,7 @@ template <
   typename _MappedType, // 내가 저장하는 실제 데이터
   typename _KeyCompare = std::less<_KeyType>, // 요소의 순서를 비교하고, 동일한지 결정할 때 사용한다.
   typename _Alloc = std::allocator<pair<const _KeyType, _MappedType> >
+// 위의 타입들은 그대로 사용되어, 내장된 tree의 타입을 결정한다.
 > class map {
 public:
   typedef _KeyType key_type;
@@ -35,12 +36,7 @@ public:
   };
 
 private:
-  typedef _Rb_tree<
-    key_type, 
-    value_type, 
-    _Select1st<value_type>, // value_type에서 first(즉 key)를 뽑아내주는 functor(struct 형태)
-    key_compare, 
-    _Alloc> 
+  typedef _Rb_tree<key_type, value_type, _Select1st<value_type>, key_compare, _Alloc> 
     _Rb_tree_type;
   _Rb_tree_type _M_tree; // 이것이 실제 map
 public:
@@ -72,6 +68,7 @@ public:
   map(_InputIterator __first, _InputIterator __last, const _KeyCompare& __comp,
       const allocator_type& __a = allocator_type())
     : _M_tree(__comp, __a) { _M_tree.insert_unique(__first, __last); }
+  
   map(const map<_KeyType, _MappedType, _KeyCompare, _Alloc>& __x) : _M_tree(__x._M_tree) {}
 
   map<_KeyType, _MappedType, _KeyCompare, _Alloc>&
@@ -116,7 +113,6 @@ public:
     return (*this)[__n]; 
   }
   
-  // map 객체가 const-qualified인 경우
   const _MappedType& at(size_type __n) const { 
     if (__n >= this->size())
       throw std::out_of_range("map");
@@ -158,6 +154,7 @@ public:
   void clear() { _M_tree.clear(); }
 
   // map operations:
+  // (설명은 tree.hpp를 참고하자.)
   
   iterator find(const key_type& __x) { return _M_tree.find(__x); }
   const_iterator find(const key_type& __x) const { return _M_tree.find(__x); }
@@ -240,10 +237,6 @@ void swap(map<_Key,_MappedType,_KeyCompare,_Alloc>& __x,
   __x.swap(__y);
 }
 
-} // namespace std
+} // namespace ft
 
 #endif /* MAP_HPP */
-
-// Local Variables:
-// mode:C++
-// End:

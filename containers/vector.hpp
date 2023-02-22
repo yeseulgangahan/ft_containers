@@ -31,18 +31,12 @@
 
   // std::max(a, b): a와 b 중 큰 것을 반환한다.
 
-  // ft::copy(source의 시작, source의 끝, dest의 시작): 
-  //    source의 구간을 dest의 시작지점부터 복사한다.
-  //    범위의 길이가 0일 경우 3번째 인자를, 아니면 복사된 구간의 마지막을 반환한다.
-
   // std::fill(시작, 끝, value):
   //    시작부터 끝까지의 구간에, value를 대입한다.
 
   // std::fill_n(시작, n, value):
   //    시작부분부터 n개의 요소에 value를 대입한다. (단, C++98은 반환값이 없다.)
 
-  // std::equal(1의 시작, 1의 끝, 2의 시작):
-  //    1과 2, 두 범위의 요소가 같은지 여부를 반환한다.
 
 #include <cstdlib>
   // std::abs(n):
@@ -56,8 +50,14 @@
   // ft::reverse_iterator
 
 #include "algorithm.hpp"
-  // ft::equal()
+  // ft::equal(1의 시작, 1의 끝, 2의 시작):
+  //    1과 2, 두 범위의 요소가 같은지 여부를 반환한다.
   // ft::lexicographical_compare()
+
+  // ft::copy(source의 시작, source의 끝, dest의 시작): 
+  //    source의 구간을 dest의 시작지점부터 복사한다.
+  //    범위의 길이가 0일 경우 3번째 인자를, 아니면 복사된 구간의 마지막을 반환한다.
+  // (기존의 std::copy를 사용한 결과가 느려서, 직접 간단하게 만들었다.)
 
 #include "type_traits.hpp"
   // ft::enable_if
@@ -71,10 +71,12 @@ class _Vector_base {
 
 // vector base의 목적은,
 // vector base의 생성자와 소멸자가 vector의 공간할당을 담당하도록 하는 것이다. (초기화 제외)
-// 이렇게 함으로써  예외 안정성을 더 쉽게 달성할 수 있다.
+// 이렇게 함으로써 예외 안정성을 더 쉽게 달성할 수 있다.
+// (즉, vector생성자의 몸통에서 예외가 발생했을 경우, 상속받은 vector_base는 자동적으로 안전하게 소멸자가 호출되므로, 
+//  따로 catch하여 deallocate해 줄 필요가 사라진다.)
 
 public:
-  typedef _AllocatorType allocator_type; // std::allocator<_Type>가 default이다.
+  typedef _AllocatorType allocator_type;
 
   // get_allocator()는 관련 할당기를 반환한다.
   allocator_type get_allocator() const { return _M_data_allocator; }
@@ -112,8 +114,6 @@ template <
 > class vector : protected _Vector_base<_Type, _AllocatorType>
 {
 
-// (멤버함수의 순서는 cppreference.com의 순서를 따라 정렬했다.)
-
 private:
   typedef _Vector_base<_Type, _AllocatorType> _Base;
   typedef vector<_Type, _AllocatorType> vector_type;
@@ -136,7 +136,7 @@ public:
   typedef value_type& reference;
   typedef const value_type&  const_reference;
 
-  // default allocator에 한하여 각각 value_type *, const value_type *
+  // default allocator에서 각각 value_type *, const value_type *
   typedef typename allocator_type::pointer pointer;
   typedef typename allocator_type::const_pointer const_pointer;
 
@@ -174,7 +174,6 @@ public:
 
   // operator[] :
   // at과 동일하되, 범위 확인을 하지 않는다.
-  // 범위 밖의 위치를 요구했을 때는 out_of_range exception을 던지지만, undefined behavior이므로 이식성을 고려한다면 사용하지 않아야 한다.
   // Exception safety: 벡터의 size가 __n보다 클 경우 no-throw guarantee, 나머지 경우는 undefined behavior.
   reference operator[](size_type __n) { return *(begin() + __n); }
   const_reference operator[](size_type __n) const { return *(begin() + __n); }
@@ -208,13 +207,13 @@ public:
   const_iterator end() const { return const_iterator (_M_finish); }
 
   // rbegin() :
-  // 마지막 요소를 가리키는 역반복자를 반환한다.
+  // end()를 담고 있고, 역참조 시 마지막 요소를 반환하는 역반복자를 반환한다.
   // (역반복자 입장에서는 마지막 요소가 첫번째 요소다.)
   reverse_iterator rbegin() { return reverse_iterator(end()); }
   const_reverse_iterator rbegin() const { return const_reverse_iterator(end()); }
 
   // rend() :
-  // '첫번째 요소의 (이론적) 앞 요소'을 가리키는 반복자를 반환한다.
+  // begin()을 담고 있고, 역참조 시 '첫번째 요소의 (이론적) 앞 요소'를 반환하는 반복자를 반환한다.
   // (역반복자 입장에서는 '첫번째 요소의 앞 요소'가 '마지막 요소의 다음 요소'다.)
   reverse_iterator rend() { return reverse_iterator(begin()); }
   const_reverse_iterator rend() const { return const_reverse_iterator(begin()); }
@@ -292,7 +291,8 @@ public:
     { _M_fill_insert(__pos, __n, __x); }
 
   // insert3. 범위 :
-  // insert2에서 자료형이 딱 맞지 않으면 템플릿으로 와버린다. 반복자가 아닐 경우 다시 insert2로 보내주어야 한다.
+  // * insert2에서 자료형이 딱 맞지 않으면 템플릿으로 와버린다.
+  //   반복자가 아닐 경우 다시 insert2로 보내주어야 하므로 enable_if를 사용한다.
   template<typename _InputIterator>
   void insert(
     iterator __pos, 
@@ -316,11 +316,11 @@ public:
   // erase1. 단일 요소
   iterator erase(iterator __position) {
     // 예) [1A234], erase A
-    if (__position + 1 != end()) // 끝 요소가 아니면
+    if (__position + 1 != end()) // 끝 요소, 즉 [4]가 아니면
       ft::copy(__position + 1, end(), __position); // 앞으로 한 칸 당긴다 [12344]
-    --_M_finish; // [1234]
-    _M_destroy(end());
-    return __position; // __position: 2를 가리키는 반복자
+    --_M_finish; // [1234]4
+    _M_destroy(end()); // 마지막 4 삭제
+    return __position; // __position: [2]를 가리키는 반복자
   }
 
   // erase2. 범위
@@ -494,14 +494,13 @@ public:
   // returns the associated allocator
   allocator_type get_allocator() const { return _Base::get_allocator(); }
 
-
 //----------------------------------------------------------------------------------------
 
 protected:
   // _M_FUNCTIONS
 
   // _M_destroy() :
-  // 포인터가 들어올 수도, 이터레이터가 들어올 수도. 포인터만 받을까? 할당기도 포인터만 받음
+  // 소멸자를 호출한다.
 
 
   // _M_destroy1. 범위
@@ -544,7 +543,12 @@ protected:
     size_type __n = std::distance(__first, __last);
     _M_start = _M_allocate(__n);
     _M_end_of_storage = _M_start + __n;
-    _M_finish = std::uninitialized_copy(__first, __last, _M_start); // 스로우한거 받아줘야 할까?
+    try {
+      _M_finish = std::uninitialized_copy(__first, __last, _M_start);
+    } catch(...) { // 할당을 몸통해서 하는 3.range 생성자에서 사용되므로, 예외안정성 보장을 위해 추가했다.
+  _M_deallocate(_M_start, __n);
+  throw;
+    }
   }
 
   // _M_range_insert() :
@@ -594,9 +598,9 @@ protected:
         }
       }
       else { // case2: 빈 공간이 부족할 때 (재할당이 필요할 때)
-        const size_type __old_size = size();
-        const size_type __len = __old_size +
-          std::max(__old_size, __n); // __old_size: 메모리할당 정책에 따라 기존의 2배 / __n: 그보다 더 필요할 경우 __n만큼
+        const size_type __old_capacity = capacity();
+        const size_type __len = __old_capacity +
+          std::max(__old_capacity, __n); // __old_capacity: 메모리할당 정책에 따라 기존의 2배 / __n: 그보다 더 필요할 경우 __n만큼
         
         iterator __new_start(_M_allocate(__len));
         iterator __new_finish(__new_start);
@@ -651,14 +655,11 @@ protected:
       }
 
       else { // case2: 넣을 공간이 부족해 재할당이 필요한 경우
-        const size_type __old_size = size();
-        const size_type __len = capacity() +
-           std::max(capacity(), __n); // 나의 메모리 할당 정책: 기존 capacity의 2배, 그보다 더 필요할 경우 __n만큼
-        //const size_type __len = __old_size +
-        //   std::max(__old_size, __n); // C++98의 구현에서 메모리할당 정책은 기존 size의 2배이다.
+        const size_type __old_capacity = capacity();
+        const size_type __len = __old_capacity +
+           std::max(__old_capacity, __n); // 나의 메모리 할당 정책: 기존 capacity의 2배, 그보다 더 필요할 경우 __n만큼
         iterator __new_start(_M_allocate(__len));
         iterator __new_finish(__new_start);
-        
         try {
           __new_finish = std::uninitialized_copy(begin(), __position, __new_start);
           __new_finish = std::uninitialized_fill_n(__new_finish, __n, __x);
@@ -759,8 +760,13 @@ protected:
     else { // case2: 재할당이 필요한 경우
       // if, old: [1234], *position == 2, x == A
 
-      const size_type __old_size = size();
-      const size_type __len = __old_size != 0 ? 2 * __old_size : 1; // 재할당정책: 기존 크기의 2배
+      size_type __old_capacity = capacity();
+      size_type __len = 0;
+      if (__old_capacity != 0) {
+        __len = 2 * __old_capacity; // 재할당정책: 기존 capacity의 2배
+      } else { // 첫 삽입일 때
+        __len = 1;
+      }
       iterator __new_start(_M_allocate(__len)); // new: [00000000] (0 represents empty space)
       iterator __new_finish(__new_start);
       try {
@@ -828,7 +834,7 @@ protected:
 // __x와 __y 벡터 컨테이너 간의 적절한 비교연산을 수행한다.
 // no-throw guarantee: 요소가 적절한 no_throw guarantee를 지원할 경우
 
-// (1) size를 비교한 뒤 같으면 (2) equal()로 요소들을 비교하는 것과 동일하게 동작한다.
+// (1) size를 비교한 뒤 같으면 (2) equal()로 요소들을 비교한다.
 // 다른 요소가 발견된 곳에서 멈춘다.
   template <typename _Type, typename _AllocatorType>
   bool operator==(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
@@ -837,7 +843,6 @@ protected:
   }
 
   // lexicographical_compare()를 사용하는 것과 동일하게 동작한다.
-  // 즉 operator<를 사용하여 a<b, b<a 모두 확인하고, 처음 비교가 가능한 곳에서 멈춘다.
   template <typename _Type, typename _AllocatorType>
   bool operator<(const vector<_Type, _AllocatorType>& __x, const vector<_Type, _AllocatorType>& __y) {
     return ft::lexicographical_compare(__x.begin(), __x.end(), __y.begin(), __y.end());
