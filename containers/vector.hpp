@@ -377,9 +377,9 @@ public:
   // 인자로 들어온 (타입이 같은) 또다른 vector와 가지고 있던 메모리를 바꾸어 가진다.
   // 비멤버함수 swap이 vector에 대해 사용될 경우 이 swap을 쓰도록 오버로딩되어 있다.
   void swap(vector<_Type, _AllocatorType>& __x) {
-    ft::swap(_M_start, __x._M_start);
-    ft::swap(_M_finish, __x._M_finish);
-    ft::swap(_M_end_of_storage, __x._M_end_of_storage);
+    std::swap(_M_start, __x._M_start);
+    std::swap(_M_finish, __x._M_finish);
+    std::swap(_M_end_of_storage, __x._M_end_of_storage);
   }
 
 public:

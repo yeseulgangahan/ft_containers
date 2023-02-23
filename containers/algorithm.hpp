@@ -70,13 +70,6 @@ bool lexicographical_compare(InputIterator1 first1, InputIterator1 last1, InputI
   return (first2 != last2); // 범위2가 아직 남았다면 범위1이 더 짧으므로 true 반환
 }
 
-template <typename T>
-void swap(T& a, T& b) {
-  T temp(a);
-  a = b;
-  b = temp;
-}
-
 }
 
 #endif // ALGORITHM_HPP
