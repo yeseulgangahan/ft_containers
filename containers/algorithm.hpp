@@ -77,16 +77,6 @@ void swap(T& a, T& b) {
   b = temp;
 }
 
-template<typename InputIterator, typename OutputIterator>
-OutputIterator copy(InputIterator first, InputIterator last, OutputIterator result) {
-   typedef typename iterator_traits<InputIterator>::difference_type _Distance;
-    for(_Distance __n = last - first; __n > 0; --__n) {
-    *result = *first;
-    ++result; ++first;
-  }
-  return result;
-}
-
 }
 
 #endif // ALGORITHM_HPP

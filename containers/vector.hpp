@@ -54,7 +54,7 @@
   //    1과 2, 두 범위의 요소가 같은지 여부를 반환한다.
   // ft::lexicographical_compare()
 
-  // ft::copy(source의 시작, source의 끝, dest의 시작): 
+  // std::copy(source의 시작, source의 끝, dest의 시작): 
   //    source의 구간을 dest의 시작지점부터 복사한다.
   //    범위의 길이가 0일 경우 3번째 인자를, 아니면 복사된 구간의 마지막을 반환한다.
   // (기존의 std::copy를 사용한 결과가 느려서, 직접 간단하게 만들었다.)
@@ -317,7 +317,7 @@ public:
   iterator erase(iterator __position) {
     // 예) [1A234], erase A
     if (__position + 1 != end()) // 끝 요소, 즉 [4]가 아니면
-      ft::copy(__position + 1, end(), __position); // 앞으로 한 칸 당긴다 [12344]
+      std::copy(__position + 1, end(), __position); // 앞으로 한 칸 당긴다 [12344]
     --_M_finish; // [1234]4
     _M_destroy(end()); // 마지막 4 삭제
     return __position; // __position: [2]를 가리키는 반복자
@@ -326,7 +326,7 @@ public:
   // erase2. 범위
   iterator erase(iterator __first, iterator __last) {
     // 예) [1AB23], erase AB
-    iterator __i(ft::copy(__last, end(), __first)); // [12323]: 지울 범위의 뒷부분 데이터를 앞으로 옮긴다.
+    iterator __i(std::copy(__last, end(), __first)); // [12323]: 지울 범위의 뒷부분 데이터를 앞으로 옮긴다.
     _M_destroy(__i, end()); // [12300]: 복사된 구간 다음부터 destroy
     _M_finish = _M_finish - (__last - __first); // [123]: 지운 구간(__last - __first)만큼 줄인다.
     return __first;
@@ -444,12 +444,12 @@ public:
     }
 
     else if (size() >= __xlen) { // case2: 덮어쓰고 남는 뒷부분을 destroy해야 하는 경우
-      iterator __i(ft::copy(__x.begin(), __x.end(), begin()));
+      iterator __i(std::copy(__x.begin(), __x.end(), begin()));
       _M_destroy(__i, end());
     }
     
     else { // case3: size가 작아서 덮어쓰고 일부 생성해야 하는 경우
-      ft::copy(__x.begin(), __x.begin() + size(), _M_start); // 복사(만)
+      std::copy(__x.begin(), __x.begin() + size(), _M_start); // 복사(만)
       std::uninitialized_copy(__x.begin() + size(), __x.end(), _M_finish); // 생성
     }
 
@@ -583,7 +583,7 @@ protected:
           std::uninitialized_copy(_M_finish - __n, _M_finish, _M_finish); // [1234545] : 45를 **생성**
           _M_finish += __n;
           std::copy_backward(__position, __old_finish - __n, __old_finish); // [1232345] : 23을 복사
-          ft::copy(__first, __last, __position); // [1AB2345] : AB를 복사
+          std::copy(__first, __last, __position); // [1AB2345] : AB를 복사
         }
         
         else { // case1-2. 새로 넣는 요소가 기존에 생성되어 있는 요소들을 넘어선 위치에 들어가야 할 때
@@ -594,7 +594,7 @@ protected:
           _M_finish += __n - __elems_after;
           std::uninitialized_copy(__position, __old_finish, _M_finish); // [123CD23]: 23을 **생성**
           _M_finish += __elems_after;
-          ft::copy(__first, __mid, __position); // [1ABCD23]: AB를 복사
+          std::copy(__first, __mid, __position); // [1ABCD23]: AB를 복사
         }
       }
       else { // case2: 빈 공간이 부족할 때 (재할당이 필요할 때)
@@ -712,7 +712,7 @@ protected:
     }
 
     else if (size() >= __len) { // case2: 덮어쓰고 남는 뒷부분을 destroy해야 하는 경우
-      iterator __new_finish(ft::copy(__first, __last, _M_start));
+      iterator __new_finish(std::copy(__first, __last, _M_start));
       _M_destroy(__new_finish, end());
       _M_finish = __new_finish.base();
     }
@@ -720,7 +720,7 @@ protected:
     else { // case3: size가 작아서 덮어쓰고 일부 생성이 필요한 경우
       _ForwardIter __mid = __first;
       std::advance(__mid, size());
-      ft::copy(__first, __mid, _M_start); // 복사(만)
+      std::copy(__first, __mid, _M_start); // 복사(만)
       _M_finish = std::uninitialized_copy(__mid, __last, _M_finish); // 생성
     }
   }

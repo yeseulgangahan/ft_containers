@@ -31,6 +31,8 @@
   // ft::enable_if
   // ft::is_integral
 
+#include "algorithm.hpp"
+
 namespace ft
 { 
 
@@ -745,7 +747,7 @@ operator==(const _Rb_tree<_Key,_Value,_GetKeyOfValue,_Compare,_Alloc>& __x,
            const _Rb_tree<_Key,_Value,_GetKeyOfValue,_Compare,_Alloc>& __y)
 {
   return __x.size() == __y.size() &&
-         equal(__x.begin(), __x.end(), __y.begin());
+         ft::equal(__x.begin(), __x.end(), __y.begin());
 }
 
 template <class _Key, class _Value, class _GetKeyOfValue, class _Compare, class _Alloc>
@@ -753,7 +755,7 @@ bool
 operator<(const _Rb_tree<_Key,_Value,_GetKeyOfValue,_Compare,_Alloc>& __x, 
           const _Rb_tree<_Key,_Value,_GetKeyOfValue,_Compare,_Alloc>& __y)
 {
-  return lexicographical_compare(__x.begin(), __x.end(), __y.begin(), __y.end());
+  return ft::lexicographical_compare(__x.begin(), __x.end(), __y.begin(), __y.end());
 }
 
 template <class _Key, class _Value, class _GetKeyOfValue, class _Compare, class _Alloc>
